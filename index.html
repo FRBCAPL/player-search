@@ -78,33 +78,45 @@ async function fetchSheetData(sheetName) {
   return json.table.rows;
 }
 
-// 2. Fetch players from "BCAPL Singles Availability Public" and contacts from "Contact Info"
 async function fetchPlayers() {
   try {
+    // Fetch data from both sheets
     const [playerRows, contactRows] = await Promise.all([
-      fetchSheetData(playerSheetName),
-      fetchSheetData(contactSheetName)
+      fetchSheetData(playerSheetName),  // Availability sheet
+      fetchSheetData(contactSheetName)  // Contact sheet
     ]);
 
-    // Create contact map (name -> contact)
+    // Create contact map (case-insensitive)
     const contactMap = {};
     contactRows.forEach(row => {
-      const name = row.c[0]?.v?.toString().toLowerCase() || "";
-      const contact = row.c[1]?.v || "";
-      if (name) contactMap[name] = contact;
+      const name = row.c[0]?.v?.toString().trim().toLowerCase() || "";
+      const phone = row.c[1]?.v?.toString() || "";    // Column B
+      const email = row.c[2]?.v?.toString() || "";    // Column C
+      const facebook = row.c[3]?.v?.toString() || ""; // Column D
+      const other = row.c[4]?.v?.toString() || "";    // Column E
+
+      if (name) {
+        contactMap[name] = [
+          phone && `📞 ${phone}`,
+          email && `✉️ ${email}`,
+          facebook && `🔵 ${facebook}`,
+          other && `📝 ${other}`
+        ].filter(Boolean).join('\n');
+      }
     });
 
-    // Combine player data with contacts
+    // Match players to contacts
     return playerRows.map(row => {
-      const name = row.c[0]?.v || "";
+      const name = row.c[0]?.v?.toString().trim() || "";
       const contact = contactMap[name.toLowerCase()] || "No contact info";
       return { name, contact };
     });
   } catch (error) {
-    console.error("Error fetching data:", error);
+    console.error("Error:", error);
     return [];
   }
 }
+
 
 function renderPlayers(players) {
   const container = document.getElementById("results");
