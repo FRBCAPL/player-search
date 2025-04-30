@@ -11,7 +11,6 @@
   #results { margin-top: 20px; }
   #pinSection { margin-bottom: 30px; }
   
-  /* Player Card Styling */
   .player {
     background: #f9f9f9;
     border-radius: 8px;
@@ -29,30 +28,31 @@
     margin: 5px 0;
   }
   
-  /* Availability Grid Styling */
   .availability-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     gap: 8px;
     margin-top: 10px;
   }
   
   .availability-day {
-    padding: 6px;
+    padding: 8px;
     border-radius: 4px;
-    text-align: center;
-    font-weight: bold;
     background: #f0f7ff;
     border: 1px solid #d0e3ff;
   }
   
-  .available { background: #e6f7d9 !important; color: #2e7d32; }
-  .unavailable { background: #ffebee !important; color: #c62828; }
+  .available-slot {
+    margin-top: 5px;
+    padding: 4px;
+    background: #e6f7d9;
+    border-radius: 3px;
+    font-size: 0.9em;
+  }
 </style>
 </head>
 <body>
 
-<!-- PIN Entry Section -->
 <div id="pinSection">
   <h2>Player Search Portal</h2>
   <input type="password" id="pinInput" placeholder="Enter your PIN" />
@@ -60,7 +60,6 @@
   <div id="pinMessage" style="color:red; margin-top:10px;"></div>
 </div>
 
-<!-- Search Interface Section -->
 <div id="searchSection">
   <h2>Player Search</h2>
   <input type="text" id="searchInput" placeholder="Search players or availability..." />
@@ -70,12 +69,11 @@
 <script>
 const sheetID = "1tvMgMHsRwQxsR6lMNlSnztmwpK7fhZeNEyqjTqmRFRc";
 const pinSheetName = "BCAPL SIGNUP";
-const playerSheetName = "BCAPL Availability"; // Update if your tab name differs
+const playerSheetName = "BCAPL Availability";
 const contactSheetName = "Contact Info";
 
 let allPlayers = [];
 
-// Verify PIN against column L in "BCAPL SIGNUP"
 async function verifyPin() {
   const pin = document.getElementById("pinInput").value.trim();
   if (!pin) {
@@ -91,7 +89,7 @@ async function verifyPin() {
     const json = JSON.parse(text.substr(47).slice(0, -2));
     const rows = json.table.rows;
     const pinExists = rows.some(row => {
-      const cell = row.c[11]; // column L (index 11)
+      const cell = row.c[11];
       return cell && cell.v && cell.v.toString() === pin;
     });
 
@@ -103,12 +101,11 @@ async function verifyPin() {
       document.getElementById("pinMessage").innerText = "Invalid PIN. Please try again.";
     }
   } catch (error) {
-    console.error("Error verifying PIN:", error);
+    console.error("Error:", error);
     document.getElementById("pinMessage").innerText = "Error verifying PIN. Please try again later.";
   }
 }
 
-// Helper: fetch sheet data by tab name
 async function fetchSheetData(sheetName) {
   const url = `https://docs.google.com/spreadsheets/d/${sheetID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheetName)}`;
   const response = await fetch(url);
@@ -117,7 +114,6 @@ async function fetchSheetData(sheetName) {
   return json.table.rows;
 }
 
-// Fetch players with contact info AND availability
 async function fetchPlayers() {
   try {
     const [playerRows, contactRows] = await Promise.all([
@@ -132,36 +128,50 @@ async function fetchPlayers() {
       const phone = row.c[1]?.v?.toString() || "";
       const email = row.c[2]?.v?.toString() || "";
       const facebook = row.c[3]?.v?.toString() || "";
-      contactMap[name] = [phone, email, facebook].filter(Boolean).join(' | ');
+      contactMap[name] = { phone, email, facebook };
     });
 
-    // Include availability (B-G) and preferred location (H)
-    return playerRows.map(row => ({
-      name: row.c[0]?.v?.toString().trim() || "",
-      contact: contactMap[row.c[0]?.v?.toString().trim().toLowerCase()] || "No contact info",
-      availability: row.c.slice(1, 7).map(day => day?.v || "").filter(Boolean), // B-G = Mon-Sat
-      location: row.c[7]?.v?.toString().trim() || "No preferred location" // Column H
-    }));
+    // Process availability data
+    return playerRows.map(row => {
+      const name = row.c[0]?.v?.toString().trim() || "";
+      const contact = contactMap[name.toLowerCase()] || {};
+      const availability = {
+        Mon: row.c[1]?.v?.toString().trim() || "",
+        Tue: row.c[2]?.v?.toString().trim() || "",
+        Wed: row.c[3]?.v?.toString().trim() || "",
+        Thu: row.c[4]?.v?.toString().trim() || "",
+        Fri: row.c[5]?.v?.toString().trim() || "",
+        Sat: row.c[6]?.v?.toString().trim() || ""
+      };
+      
+      return {
+        name,
+        contact,
+        availability,
+        location: row.c[7]?.v?.toString().trim() || "No preferred location"
+      };
+    });
   } catch (error) {
     console.error("Error:", error);
     return [];
   }
 }
 
-// Render players with availability and contact info
 function renderPlayers(list) {
   const container = document.getElementById("results");
   container.innerHTML = list.length ? list.map(player => `
     <div class="player">
       <h3>${player.name}</h3>
-      <p>📞 ${player.contact}</p>
-      <p>📍 ${player.location}</p>
+      <p>📞 Phone: ${player.contact.phone || "Not provided"}</p>
+      <p>📧 Email: ${player.contact.email || "Not provided"}</p>
+      <p>🔵 Facebook: ${player.contact.facebook || "Not provided"}</p>
+      <p>📍 Location: ${player.location}</p>
       
       <div class="availability-grid">
-        ${player.availability.map((day, i) => `
-          <div class="availability-day ${day ? 'available' : 'unavailable'}">
-            ${['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][i]}: 
-            ${day || '❌'}
+        ${Object.entries(player.availability).map(([day, time]) => `
+          <div class="availability-day">
+            <strong>${day}</strong>
+            ${time ? `<div class="available-slot">${time.replace(/,/g, '<br>')}</div>` : '<div class="available-slot">❌ Unavailable</div>'}
           </div>
         `).join('')}
       </div>
@@ -169,7 +179,6 @@ function renderPlayers(list) {
   `).join("") : "<p>No players found</p>";
 }
 
-// Initialize search with dynamic filtering
 async function initSearch() {
   allPlayers = await fetchPlayers();
   const searchInput = document.getElementById("searchInput");
@@ -182,7 +191,7 @@ async function initSearch() {
     }
     const filtered = allPlayers.filter(p => 
       p.name.toLowerCase().includes(term) || 
-      p.availability.some(day => day.toString().toLowerCase().includes(term)) ||
+      Object.values(p.availability).some(time => time.toLowerCase().includes(term)) ||
       p.location.toLowerCase().includes(term)
     );
     renderPlayers(filtered);
