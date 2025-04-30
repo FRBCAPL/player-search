@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>Player Search Portal with PIN</title>
+<title>Player Search Portal</title>
 <style>
   body { font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: auto; }
   #searchSection { display: none; }
@@ -13,23 +13,27 @@
 </head>
 <body>
 
+<!-- PIN Entry Section -->
 <div id="pinSection">
-  <h2>Enter PIN</h2>
+  <h2>Player Search Portal</h2>
   <input type="password" id="pinInput" placeholder="Enter your PIN" />
   <button onclick="verifyPin()">Submit</button>
   <div id="pinMessage" style="color:red; margin-top:10px;"></div>
 </div>
 
+<!-- Search Interface Section -->
 <div id="searchSection">
-  <h2>Player Search (Coming Soon)</h2>
-  <p>PIN verified successfully!</p>
-  <!-- You can add your player search UI here -->
+  <h2>Player Search</h2>
+  <input type="text" id="searchInput" placeholder="Search players..." />
+  <div id="results"></div>
 </div>
 
 <script>
 const sheetID = "1tvMgMHsRwQxsR6lMNlSnztmwpK7fhZeNEyqjTqmRFRc";
 const pinSheetName = "BCAPL SIGNUP";
+const playerSheetName = "BCAPL Singles Availability Public"; // Change if needed
 
+// 1. Verify PIN against column L in "BCAPL SIGNUP"
 async function verifyPin() {
   const pin = document.getElementById("pinInput").value.trim();
   if (!pin) {
@@ -42,29 +46,69 @@ async function verifyPin() {
     const url = `https://docs.google.com/spreadsheets/d/${sheetID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(pinSheetName)}`;
     const response = await fetch(url);
     const text = await response.text();
-    // Parse JSONP response by removing prefix and suffix
     const json = JSON.parse(text.substr(47).slice(0, -2));
     const rows = json.table.rows;
-
     // Check if PIN exists in column L (index 11)
     const pinExists = rows.some(row => {
-      const cell = row.c[11]; // column L
+      const cell = row.c[11];
       return cell && cell.v && cell.v.toString() === pin;
     });
 
     if (pinExists) {
       document.getElementById("pinSection").style.display = "none";
       document.getElementById("searchSection").style.display = "block";
+      initSearch();
     } else {
       document.getElementById("pinMessage").innerText = "Invalid PIN. Please try again.";
     }
-
   } catch (error) {
     console.error("Error fetching sheet data:", error);
     document.getElementById("pinMessage").innerText = "Error verifying PIN. Please try again later.";
   }
 }
+
+// 2. Fetch player data from public sheet and display search interface
+async function fetchPlayers() {
+  const url = `https://docs.google.com/spreadsheets/d/${sheetID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(playerSheetName)}`;
+  const response = await fetch(url);
+  const text = await response.text();
+  const json = JSON.parse(text.substr(47).slice(0, -2));
+  return json.table.rows.map(row => ({
+    name: row.c[0]?.v || "",
+    contact: row.c[1]?.v || ""
+  }));
+}
+
+function renderPlayers(players) {
+  const container = document.getElementById("results");
+  if (players.length === 0) {
+    container.innerHTML = "<p>No players found</p>";
+    return;
+  }
+  container.innerHTML = players.map(p => `
+    <div class="player">
+      ${p.name} <button onclick="alert('Contact: ${p.contact.replace(/'/g, "\\'")}')">Details</button>
+    </div>
+  `).join("");
+}
+
+async function initSearch() {
+  const players = await fetchPlayers();
+  const searchInput = document.getElementById("searchInput");
+
+  function filterPlayers() {
+    const term = searchInput.value.toLowerCase();
+    const filtered = players.filter(p => p.name.toLowerCase().includes(term));
+    renderPlayers(filtered);
+  }
+
+  searchInput.addEventListener("input", filterPlayers);
+  renderPlayers(players);
+}
 </script>
+
+</body>
+</html>
 
 </body>
 </html>
