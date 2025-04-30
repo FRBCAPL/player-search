@@ -31,7 +31,10 @@
 <script>
 const sheetID = "1tvMgMHsRwQxsR6lMNlSnztmwpK7fhZeNEyqjTqmRFRc";
 const pinSheetName = "BCAPL SIGNUP";
-const playerSheetName = "BCAPL Singles Availability Public"; // Change if needed
+const playerSheetName = "BCAPL Singles Availability Public";
+
+// Global variable to store players
+let allPlayers = [];
 
 // 1. Verify PIN against column L in "BCAPL SIGNUP"
 async function verifyPin() {
@@ -67,7 +70,7 @@ async function verifyPin() {
   }
 }
 
-// 2. Fetch player data from public sheet and display search interface
+// 2. Fetch player data from public sheet
 async function fetchPlayers() {
   const url = `https://docs.google.com/spreadsheets/d/${sheetID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(playerSheetName)}`;
   const response = await fetch(url);
@@ -79,37 +82,44 @@ async function fetchPlayers() {
   }));
 }
 
+// 3. Render players with working contact info
 function renderPlayers(players) {
   const container = document.getElementById("results");
   if (players.length === 0) {
     container.innerHTML = "<p>No players found</p>";
     return;
   }
-  container.innerHTML = players.map(p => `
+  container.innerHTML = players.map((p, index) => `
     <div class="player">
-      ${p.name} <button onclick="alert('Contact: ${p.contact.replace(/'/g, "\\'")}')">Details</button>
+      ${p.name} <button onclick="showContact(${index})">Details</button>
     </div>
   `).join("");
 }
 
+// 4. Show contact info using the global allPlayers array
+function showContact(index) {
+  const player = allPlayers[index];
+  if (player && player.contact) {
+    alert(`Contact: ${player.contact}`);
+  } else {
+    alert("No contact info available");
+  }
+}
+
+// 5. Initialize search with proper player data
 async function initSearch() {
-  const players = await fetchPlayers();
+  allPlayers = await fetchPlayers(); // Store globally
   const searchInput = document.getElementById("searchInput");
 
   function filterPlayers() {
     const term = searchInput.value.toLowerCase();
-    const filtered = players.filter(p => p.name.toLowerCase().includes(term));
+    const filtered = allPlayers.filter(p => p.name.toLowerCase().includes(term));
     renderPlayers(filtered);
   }
 
   searchInput.addEventListener("input", filterPlayers);
-  renderPlayers(players);
+  renderPlayers(allPlayers);
 }
 </script>
-
 </body>
 </html>
-
-</body>
-</html>
-
