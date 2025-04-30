@@ -112,7 +112,6 @@ async function fetchPlayers() {
       fetchSheetData(contactSheetName)
     ]);
 
-    // Create contact map (case-insensitive)
     const contactMap = {};
     contactRows.forEach(row => {
       const name = row.c[0]?.v?.toString().trim().toLowerCase() || "";
@@ -122,17 +121,17 @@ async function fetchPlayers() {
       contactMap[name] = [phone, email, facebook].filter(Boolean).join(' | ');
     });
 
-    // Include availability data (columns B-G: Sun-Sat)
     return playerRows.map(row => ({
       name: row.c[0]?.v?.toString().trim() || "",
       contact: contactMap[row.c[0]?.v?.toString().trim().toLowerCase()] || "No contact info",
-      availability: row.c.slice(1, 7).map(day => day?.v || "").filter(Boolean)
+      availability: row.c.slice(1, 7).map(day => day?.v || "").filter(Boolean)  // Mon-Sat
     }));
   } catch (error) {
     console.error("Error fetching data:", error);
     return [];
   }
 }
+
 
 // 3. Render players with availability
 function renderPlayers(list) {
