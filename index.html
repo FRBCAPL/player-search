@@ -4,11 +4,37 @@
 <meta charset="UTF-8" />
 <title>Player Search Portal</title>
 <style>
-  body { font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: auto; }
-  #searchSection { display: none; }
-  input, button { padding: 10px; margin-top: 10px; width: 100%; box-sizing: border-box; }
-  button { background: #1976d2; color: white; border: none; cursor: pointer; }
-  .player { padding: 10px; border: 1px solid #ddd; margin: 5px 0; }
+  body { font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: auto; }
+  #searchSection { display: block; }
+  input, button { padding: 12px; margin: 10px 0; width: 100%; box-sizing: border-box; }
+  button { background: #1976d2; color: white; border: none; cursor: pointer; border-radius: 4px; }
+  #results { margin-top: 20px; }
+  #pinSection { margin-bottom: 30px; }
+  
+  /* New CSS Additions */
+  #searchInput {
+    font-size: 16px;
+    padding: 12px;
+    border: 2px solid #ddd;
+    border-radius: 4px;
+  }
+  
+  .player {
+    background: #f9f9f9;
+    border-radius: 8px;
+    padding: 15px;
+    margin: 10px 0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  
+  .player h3 {
+    margin: 0 0 8px 0;
+    color: #1976d2;
+  }
+  
+  .player p {
+    margin: 5px 0;
+  }
 </style>
 </head>
 <body>
@@ -22,17 +48,17 @@
 </div>
 
 <!-- Search Interface Section -->
-<div id="searchSection">
+<div id="searchSection" style="display:none;">
   <h2>Player Search</h2>
-  <input type="text" id="searchInput" placeholder="Search players..." />
-  <div id="results"></div>
+  <input type="text" id="searchInput" placeholder="Search players or availability..." />
+  <div id="results"><p>Start typing to search players...</p></div>
 </div>
 
 <script>
 const sheetID = "1tvMgMHsRwQxsR6lMNlSnztmwpK7fhZeNEyqjTqmRFRc";
 const pinSheetName = "BCAPL SIGNUP";
-const playerSheetName = "BCAPL Singles Availability"; // Updated to correct sheet
-const contactSheetName = "Contact Info"; // Separate contact info sheet
+const playerSheetName = "BCAPL Availability"; // Make sure this matches your tab name
+const contactSheetName = "Contact Info";
 
 let allPlayers = [];
 
@@ -52,7 +78,7 @@ async function verifyPin() {
     const json = JSON.parse(text.substr(47).slice(0, -2));
     const rows = json.table.rows;
     const pinExists = rows.some(row => {
-      const cell = row.c[11];
+      const cell = row.c[11]; // column L (index 11)
       return cell && cell.v && cell.v.toString() === pin;
     });
 
@@ -78,82 +104,66 @@ async function fetchSheetData(sheetName) {
   return json.table.rows;
 }
 
+// 2. Fetch players with contact info AND availability
 async function fetchPlayers() {
   try {
-    // Fetch data from both sheets
     const [playerRows, contactRows] = await Promise.all([
-      fetchSheetData(playerSheetName),  // Availability sheet
-      fetchSheetData(contactSheetName)  // Contact sheet
+      fetchSheetData(playerSheetName),
+      fetchSheetData(contactSheetName)
     ]);
 
     // Create contact map (case-insensitive)
     const contactMap = {};
     contactRows.forEach(row => {
       const name = row.c[0]?.v?.toString().trim().toLowerCase() || "";
-      const phone = row.c[1]?.v?.toString() || "";    // Column B
-      const email = row.c[2]?.v?.toString() || "";    // Column C
-      const facebook = row.c[3]?.v?.toString() || ""; // Column D
-      const other = row.c[4]?.v?.toString() || "";    // Column E
-
-      if (name) {
-        contactMap[name] = [
-          phone && `📞 ${phone}`,
-          email && `✉️ ${email}`,
-          facebook && `🔵 ${facebook}`,
-          other && `📝 ${other}`
-        ].filter(Boolean).join('\n');
-      }
+      const phone = row.c[1]?.v?.toString() || "";
+      const email = row.c[2]?.v?.toString() || "";
+      const facebook = row.c[3]?.v?.toString() || "";
+      contactMap[name] = [phone, email, facebook].filter(Boolean).join(' | ');
     });
 
-    // Match players to contacts
-    return playerRows.map(row => {
-      const name = row.c[0]?.v?.toString().trim() || "";
-      const contact = contactMap[name.toLowerCase()] || "No contact info";
-      return { name, contact };
-    });
+    // Include availability data (columns B-G: Sun-Sat)
+    return playerRows.map(row => ({
+      name: row.c[0]?.v?.toString().trim() || "",
+      contact: contactMap[row.c[0]?.v?.toString().trim().toLowerCase()] || "No contact info",
+      availability: row.c.slice(1, 7).map(day => day?.v || "").filter(Boolean)
+    }));
   } catch (error) {
-    console.error("Error:", error);
+    console.error("Error fetching data:", error);
     return [];
   }
 }
 
-
-function renderPlayers(players) {
+// 3. Render players with availability
+function renderPlayers(list) {
   const container = document.getElementById("results");
-  if (players.length === 0) {
-    container.innerHTML = "<p>No players found</p>";
-    return;
-  }
-  container.innerHTML = players.map((p, index) => `
+  container.innerHTML = list.length ? list.map(player => `
     <div class="player">
-      ${p.name} <button onclick="showContact(${index})">Details</button>
+      <h3>${player.name}</h3>
+      <p>📞 Contact: ${player.contact}</p>
+      <p>📅 Available: ${player.availability.join(", ")}</p>
     </div>
-  `).join("");
+  `).join("") : "<p>No players found</p>";
 }
 
-function showContact(index) {
-  const player = allPlayers[index];
-  if (player && player.contact) {
-    alert(`Contact: ${player.contact}`);
-  } else {
-    alert("No contact info available");
-  }
-}
-
+// 4. Initialize search with dynamic filtering
 async function initSearch() {
   allPlayers = await fetchPlayers();
   const searchInput = document.getElementById("searchInput");
 
-  function filterPlayers() {
-    const term = searchInput.value.toLowerCase();
-    const filtered = allPlayers.filter(p => p.name.toLowerCase().includes(term));
+  searchInput.addEventListener("input", e => {
+    const term = e.target.value.toLowerCase();
+    if (!term) {
+      document.getElementById("results").innerHTML = "<p>Start typing to search players...</p>";
+      return;
+    }
+    const filtered = allPlayers.filter(p => 
+      p.name.toLowerCase().includes(term) || 
+      p.availability.some(day => day.toLowerCase().includes(term))
+    );
     renderPlayers(filtered);
-  }
-
-  searchInput.addEventListener("input", filterPlayers);
-  renderPlayers(allPlayers);
+  });
 }
 </script>
-
 </body>
 </html>
