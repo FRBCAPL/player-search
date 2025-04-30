@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Player Search Portal</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: auto; }
+    input, button { padding: 10px; font-size: 16px; margin: 5px 0; }
+    button { background-color: #4285f4; color: white; border: none; cursor: pointer; }
+    button:disabled { background-color: #ccc; cursor: not-allowed; }
+    #results { margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <h2>Player Search Portal</h2>
+  <input type="password" id="pinInput" placeholder="Enter PIN" />
+  <button onclick="verifyPin()">Submit</button>
+  <div id="results"></div>
+
+  <script>
+    function verifyPin() {
+      const pin = document.getElementById('pinInput').value.trim();
+      if (!pin) {
+        alert('Please enter a PIN');
+        return;
+      }
+      // Placeholder for now:
+      document.getElementById('results').innerHTML = `<p>You entered PIN: <b>${pin}</b></p><p>(Next step: Connect to Google Apps Script)</p>`;
+    }
+  </script>
+</body>
+</html>
