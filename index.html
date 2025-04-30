@@ -5,13 +5,20 @@
 <title>Player Search Portal</title>
 <style>
   body { font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: auto; }
-  #searchSection { display: none; }
+  #searchSection { display: block; }
   input, button { padding: 12px; margin: 10px 0; width: 100%; box-sizing: border-box; }
   button { background: #1976d2; color: white; border: none; cursor: pointer; border-radius: 4px; }
   #results { margin-top: 20px; }
   #pinSection { margin-bottom: 30px; }
   
-  /* Styling for player cards */
+  /* New CSS Additions */
+  #searchInput {
+    font-size: 16px;
+    padding: 12px;
+    border: 2px solid #ddd;
+    border-radius: 4px;
+  }
+  
   .player {
     background: #f9f9f9;
     border-radius: 8px;
@@ -41,7 +48,7 @@
 </div>
 
 <!-- Search Interface Section -->
-<div id="searchSection">
+<div id="searchSection" style="display:none;">
   <h2>Player Search</h2>
   <input type="text" id="searchInput" placeholder="Search players or availability..." />
   <div id="results"><p>Start typing to search players...</p></div>
@@ -50,12 +57,12 @@
 <script>
 const sheetID = "1tvMgMHsRwQxsR6lMNlSnztmwpK7fhZeNEyqjTqmRFRc";
 const pinSheetName = "BCAPL SIGNUP";
-const playerSheetName = "BCAPL Availability"; // Update if your tab name differs
+const playerSheetName = "BCAPL Availability"; // Make sure this matches your tab name
 const contactSheetName = "Contact Info";
 
 let allPlayers = [];
 
-// Verify PIN against column L in "BCAPL SIGNUP"
+// 1. Verify PIN against column L in "BCAPL SIGNUP"
 async function verifyPin() {
   const pin = document.getElementById("pinInput").value.trim();
   if (!pin) {
@@ -97,7 +104,7 @@ async function fetchSheetData(sheetName) {
   return json.table.rows;
 }
 
-// Fetch players with contact info AND availability
+// 2. Fetch players with contact info AND availability
 async function fetchPlayers() {
   try {
     const [playerRows, contactRows] = await Promise.all([
@@ -127,7 +134,7 @@ async function fetchPlayers() {
   }
 }
 
-// Render players with availability and contact info
+// 3. Render players with availability
 function renderPlayers(list) {
   const container = document.getElementById("results");
   container.innerHTML = list.length ? list.map(player => `
@@ -139,7 +146,7 @@ function renderPlayers(list) {
   `).join("") : "<p>No players found</p>";
 }
 
-// Initialize search with dynamic filtering
+// 4. Initialize search with dynamic filtering
 async function initSearch() {
   allPlayers = await fetchPlayers();
   const searchInput = document.getElementById("searchInput");
