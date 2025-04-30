@@ -5,20 +5,13 @@
 <title>Player Search Portal</title>
 <style>
   body { font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: auto; }
-  #searchSection { display: block; }
+  #searchSection { display: none; }
   input, button { padding: 12px; margin: 10px 0; width: 100%; box-sizing: border-box; }
   button { background: #1976d2; color: white; border: none; cursor: pointer; border-radius: 4px; }
   #results { margin-top: 20px; }
   #pinSection { margin-bottom: 30px; }
   
-  /* New CSS Additions */
-  #searchInput {
-    font-size: 16px;
-    padding: 12px;
-    border: 2px solid #ddd;
-    border-radius: 4px;
-  }
-  
+  /* Player Card Styling */
   .player {
     background: #f9f9f9;
     border-radius: 8px;
@@ -35,6 +28,26 @@
   .player p {
     margin: 5px 0;
   }
+  
+  /* Availability Grid Styling */
+  .availability-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 8px;
+    margin-top: 10px;
+  }
+  
+  .availability-day {
+    padding: 6px;
+    border-radius: 4px;
+    text-align: center;
+    font-weight: bold;
+    background: #f0f7ff;
+    border: 1px solid #d0e3ff;
+  }
+  
+  .available { background: #e6f7d9 !important; color: #2e7d32; }
+  .unavailable { background: #ffebee !important; color: #c62828; }
 </style>
 </head>
 <body>
@@ -48,7 +61,7 @@
 </div>
 
 <!-- Search Interface Section -->
-<div id="searchSection" style="display:none;">
+<div id="searchSection">
   <h2>Player Search</h2>
   <input type="text" id="searchInput" placeholder="Search players or availability..." />
   <div id="results"><p>Start typing to search players...</p></div>
@@ -57,12 +70,12 @@
 <script>
 const sheetID = "1tvMgMHsRwQxsR6lMNlSnztmwpK7fhZeNEyqjTqmRFRc";
 const pinSheetName = "BCAPL SIGNUP";
-const playerSheetName = "BCAPL Availability"; // Make sure this matches your tab name
+const playerSheetName = "BCAPL Availability"; // Update if your tab name differs
 const contactSheetName = "Contact Info";
 
 let allPlayers = [];
 
-// 1. Verify PIN against column L in "BCAPL SIGNUP"
+// Verify PIN against column L in "BCAPL SIGNUP"
 async function verifyPin() {
   const pin = document.getElementById("pinInput").value.trim();
   if (!pin) {
@@ -104,7 +117,7 @@ async function fetchSheetData(sheetName) {
   return json.table.rows;
 }
 
-// 2. Fetch players with contact info AND availability
+// Fetch players with contact info AND availability
 async function fetchPlayers() {
   try {
     const [playerRows, contactRows] = await Promise.all([
@@ -135,23 +148,28 @@ async function fetchPlayers() {
   }
 }
 
-
-
-// 3. Render players with availability
+// Render players with availability and contact info
 function renderPlayers(list) {
   const container = document.getElementById("results");
   container.innerHTML = list.length ? list.map(player => `
     <div class="player">
       <h3>${player.name}</h3>
-      <p>📞 Contact: ${player.contact}</p>
-      <p>📅 Available: ${player.availability.join(", ")}</p>
-      <p>📍 Preferred Location: ${player.location}</p>
+      <p>📞 ${player.contact}</p>
+      <p>📍 ${player.location}</p>
+      
+      <div class="availability-grid">
+        ${player.availability.map((day, i) => `
+          <div class="availability-day ${day ? 'available' : 'unavailable'}">
+            ${['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][i]}: 
+            ${day || '❌'}
+          </div>
+        `).join('')}
+      </div>
     </div>
   `).join("") : "<p>No players found</p>";
 }
 
-
-// 4. Initialize search with dynamic filtering
+// Initialize search with dynamic filtering
 async function initSearch() {
   allPlayers = await fetchPlayers();
   const searchInput = document.getElementById("searchInput");
@@ -164,7 +182,8 @@ async function initSearch() {
     }
     const filtered = allPlayers.filter(p => 
       p.name.toLowerCase().includes(term) || 
-      p.availability.some(day => day.toLowerCase().includes(term))
+      p.availability.some(day => day.toString().toLowerCase().includes(term)) ||
+      p.location.toLowerCase().includes(term)
     );
     renderPlayers(filtered);
   });
