@@ -1,84 +1,147 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <title>Player Portal</title>
-  <style>
-    /* Your existing styles */
-    .modal { 
-      /* Add modal styles from your original contact popup */
-    }
-  </style>
+<meta charset="UTF-8" />
+<title>Player Search Portal</title>
+<style>
+  body { font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: auto; }
+  #searchSection { display: none; }
+  input, button { padding: 10px; margin-top: 10px; width: 100%; box-sizing: border-box; }
+  button { background: #1976d2; color: white; border: none; cursor: pointer; }
+  .player { padding: 10px; border: 1px solid #ddd; margin: 5px 0; }
+</style>
 </head>
 <body>
 
-<!-- PIN Section -->
+<!-- PIN Entry Section -->
 <div id="pinSection">
-  <h2>Enter PIN</h2>
-  <input type="password" id="pinInput">
+  <h2>Player Search Portal</h2>
+  <input type="password" id="pinInput" placeholder="Enter your PIN" />
   <button onclick="verifyPin()">Submit</button>
+  <div id="pinMessage" style="color:red; margin-top:10px;"></div>
 </div>
 
-<!-- Search Interface -->
-<div id="searchSection" style="display:none">
-  <input type="text" id="searchInput" placeholder="Search players...">
+<!-- Search Interface Section -->
+<div id="searchSection">
+  <h2>Player Search</h2>
+  <input type="text" id="searchInput" placeholder="Search players..." />
   <div id="results"></div>
 </div>
 
-<!-- Contact Modal -->
-<div id="contactModal" class="modal">
-  <div class="modal-content" id="modalContent"></div>
-</div>
-
 <script>
-const WEB_APP_URL = "YOUR_APPS_SCRIPT_WEB_APP_URL";
+const sheetID = "1tvMgMHsRwQxsR6lMNlSnztmwpK7fhZeNEyqjTqmRFRc";
+const pinSheetName = "BCAPL SIGNUP";
+const playerSheetName = "BCAPL Singles Availability Public"; // Updated to correct sheet
+const contactSheetName = "Contact Info"; // Separate contact info sheet
 
+let allPlayers = [];
+
+// 1. Verify PIN against column L in "BCAPL SIGNUP"
 async function verifyPin() {
-  const pin = document.getElementById("pinInput").value;
-  const response = await fetch(`${WEB_APP_URL}?action=verify&pin=${pin}`);
-  const data = await response.json();
-  
-  if (data.valid) {
-    document.getElementById("pinSection").style.display = "none";
-    document.getElementById("searchSection").style.display = "block";
-    loadPlayers();
-  } else {
-    alert("Invalid PIN");
+  const pin = document.getElementById("pinInput").value.trim();
+  if (!pin) {
+    document.getElementById("pinMessage").innerText = "Please enter a PIN.";
+    return;
+  }
+  document.getElementById("pinMessage").innerText = "Checking PIN...";
+
+  try {
+    const url = `https://docs.google.com/spreadsheets/d/${sheetID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(pinSheetName)}`;
+    const response = await fetch(url);
+    const text = await response.text();
+    const json = JSON.parse(text.substr(47).slice(0, -2));
+    const rows = json.table.rows;
+    const pinExists = rows.some(row => {
+      const cell = row.c[11];
+      return cell && cell.v && cell.v.toString() === pin;
+    });
+
+    if (pinExists) {
+      document.getElementById("pinSection").style.display = "none";
+      document.getElementById("searchSection").style.display = "block";
+      initSearch();
+    } else {
+      document.getElementById("pinMessage").innerText = "Invalid PIN. Please try again.";
+    }
+  } catch (error) {
+    console.error("Error verifying PIN:", error);
+    document.getElementById("pinMessage").innerText = "Error verifying PIN. Please try again later.";
   }
 }
 
-async function loadPlayers() {
-  const response = await fetch(`${WEB_APP_URL}?action=getPlayers`);
-  const players = await response.json();
-  
-  const html = players.map(player => `
+// Helper: fetch sheet data by tab name
+async function fetchSheetData(sheetName) {
+  const url = `https://docs.google.com/spreadsheets/d/${sheetID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheetName)}`;
+  const response = await fetch(url);
+  const text = await response.text();
+  const json = JSON.parse(text.substr(47).slice(0, -2));
+  return json.table.rows;
+}
+
+// 2. Fetch players from "BCAPL Singles Availability Public" and contacts from "Contact Info"
+async function fetchPlayers() {
+  try {
+    const [playerRows, contactRows] = await Promise.all([
+      fetchSheetData(playerSheetName),
+      fetchSheetData(contactSheetName)
+    ]);
+
+    // Create contact map (name -> contact)
+    const contactMap = {};
+    contactRows.forEach(row => {
+      const name = row.c[0]?.v?.toString().toLowerCase() || "";
+      const contact = row.c[1]?.v || "";
+      if (name) contactMap[name] = contact;
+    });
+
+    // Combine player data with contacts
+    return playerRows.map(row => {
+      const name = row.c[0]?.v || "";
+      const contact = contactMap[name.toLowerCase()] || "No contact info";
+      return { name, contact };
+    });
+  } catch (error) {
+    console.error("Error fetching data:", error);
+    return [];
+  }
+}
+
+function renderPlayers(players) {
+  const container = document.getElementById("results");
+  if (players.length === 0) {
+    container.innerHTML = "<p>No players found</p>";
+    return;
+  }
+  container.innerHTML = players.map((p, index) => `
     <div class="player">
-      ${player} 
-      <button onclick="showContact('${player}')">View Contact</button>
+      ${p.name} <button onclick="showContact(${index})">Details</button>
     </div>
   `).join("");
-  
-  document.getElementById("results").innerHTML = html;
 }
 
-async function showContact(playerName) {
-  const pin = document.getElementById("pinInput").value;
-  const response = await fetch(`${WEB_APP_URL}?action=getContact&pin=${pin}&player=${encodeURIComponent(playerName)}`);
-  const contact = await response.json();
-  
-  if (contact.error) {
-    alert(contact.error);
+function showContact(index) {
+  const player = allPlayers[index];
+  if (player && player.contact) {
+    alert(`Contact: ${player.contact}`);
   } else {
-    document.getElementById("modalContent").innerHTML = `
-      <h2>${playerName}</h2>
-      <p><strong>Phone:</strong> ${contact.phone}</p>
-      <p><strong>Email:</strong> ${contact.email}</p>
-      <p><strong>Facebook:</strong> ${contact.facebook}</p>
-      <p><strong>Forum:</strong> ${contact.forum}</p>
-      <p><strong>Other:</strong> ${contact.other}</p>
-    `;
-    document.getElementById("contactModal").style.display = "block";
+    alert("No contact info available");
   }
 }
+
+async function initSearch() {
+  allPlayers = await fetchPlayers();
+  const searchInput = document.getElementById("searchInput");
+
+  function filterPlayers() {
+    const term = searchInput.value.toLowerCase();
+    const filtered = allPlayers.filter(p => p.name.toLowerCase().includes(term));
+    renderPlayers(filtered);
+  }
+
+  searchInput.addEventListener("input", filterPlayers);
+  renderPlayers(allPlayers);
+}
 </script>
+
 </body>
 </html>
