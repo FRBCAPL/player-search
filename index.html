@@ -69,8 +69,8 @@
 <script>
 const sheetID = "1tvMgMHsRwQxsR6lMNlSnztmwpK7fhZeNEyqjTqmRFRc";
 const pinSheetName = "BCAPL SIGNUP";
-const playerSheetName = "BCAPL Availability";
-const contactSheetName = "Contact Info";
+const playerSheetName = "BCAPL Availability"; // Make sure this is your availability tab
+const contactSheetName = "Contact Info"; // Make sure this is your contact info tab
 
 let allPlayers = [];
 
@@ -89,7 +89,7 @@ async function verifyPin() {
     const json = JSON.parse(text.substr(47).slice(0, -2));
     const rows = json.table.rows;
     const pinExists = rows.some(row => {
-      const cell = row.c[11];
+      const cell = row.c[11]; // Column L (index 11)
       return cell && cell.v && cell.v.toString() === pin;
     });
 
@@ -131,26 +131,20 @@ async function fetchPlayers() {
       contactMap[name] = { phone, email, facebook };
     });
 
-    // Process availability data
-    return playerRows.map(row => {
-      const name = row.c[0]?.v?.toString().trim() || "";
-      const contact = contactMap[name.toLowerCase()] || {};
-      const availability = {
+    // Process availability data (columns B-G = Mon-Sat)
+    return playerRows.map(row => ({
+      name: row.c[0]?.v?.toString().trim() || "",
+      contact: contactMap[row.c[0]?.v?.toString().trim().toLowerCase()] || {},
+      availability: {
         Mon: row.c[1]?.v?.toString().trim() || "",
         Tue: row.c[2]?.v?.toString().trim() || "",
         Wed: row.c[3]?.v?.toString().trim() || "",
         Thu: row.c[4]?.v?.toString().trim() || "",
         Fri: row.c[5]?.v?.toString().trim() || "",
         Sat: row.c[6]?.v?.toString().trim() || ""
-      };
-      
-      return {
-        name,
-        contact,
-        availability,
-        location: row.c[7]?.v?.toString().trim() || "No preferred location"
-      };
-    });
+      },
+      location: row.c[7]?.v?.toString().trim() || "No preferred location"
+    }));
   } catch (error) {
     console.error("Error:", error);
     return [];
@@ -171,12 +165,17 @@ function renderPlayers(list) {
         ${Object.entries(player.availability).map(([day, time]) => `
           <div class="availability-day">
             <strong>${day}</strong>
-            ${time ? `<div class="available-slot">${time.replace(/,/g, '<br>')}</div>` : '<div class="available-slot">❌ Unavailable</div>'}
+            ${time ? `<div class="available-slot">${formatTimeSlots(time)}</div>` : '<div class="available-slot">❌ Unavailable</div>'}
           </div>
         `).join('')}
       </div>
     </div>
   `).join("") : "<p>No players found</p>";
+}
+
+// Helper to format time slots (e.g., "10am-6pm, 1030pm-11pm" → separate lines)
+function formatTimeSlots(timeString) {
+  return timeString.split(',').map(slot => slot.trim()).join('<br>');
 }
 
 async function initSearch() {
