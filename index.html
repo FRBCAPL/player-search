@@ -131,19 +131,19 @@ async function fetchPlayers() {
       contactMap[name] = { phone, email, facebook };
     });
 
-    // Correct column mapping for availability sheet
+    // Map each day explicitly - CRITICAL UPDATE
     return playerRows.map(row => ({
       name: row.c[0]?.v?.toString().trim() || "",
       contact: contactMap[row.c[0]?.v?.toString().trim().toLowerCase()] || {},
       availability: {
-        Mon: row.c[1]?.v?.toString().trim() || "",
-        Tue: row.c[2]?.v?.toString().trim() || "",
-        Wed: row.c[3]?.v?.toString().trim() || "",
-        Thu: row.c[4]?.v?.toString().trim() || "",
-        Fri: row.c[5]?.v?.toString().trim() || "",
-        Sat: row.c[6]?.v?.toString().trim() || ""
+        Mon: row.c[1]?.v?.toString().trim() || "", // Column B
+        Tue: row.c[2]?.v?.toString().trim() || "", // Column C
+        Wed: row.c[3]?.v?.toString().trim() || "", // Column D
+        Thu: row.c[4]?.v?.toString().trim() || "", // Column E
+        Fri: row.c[5]?.v?.toString().trim() || "", // Column F
+        Sat: row.c[6]?.v?.toString().trim() || ""  // Column G
       },
-      location: row.c[7]?.v?.toString().trim() || "No preferred location"
+      location: row.c[7]?.v?.toString().trim() || "No preferred location" // Column H
     }));
   } catch (error) {
     console.error("Error:", error);
@@ -176,7 +176,7 @@ function renderPlayers(list) {
 
 async function initSearch() {
   allPlayers = await fetchPlayers();
-  console.log("First Player Data:", allPlayers[0]);
+  console.log("First Player Data:", allPlayers[0]); // Debug line
   
   const searchInput = document.getElementById("searchInput");
   searchInput.addEventListener("input", e => {
@@ -194,3 +194,5 @@ async function initSearch() {
   });
 }
 </script>
+</body>
+</html>
