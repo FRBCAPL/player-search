@@ -86,52 +86,68 @@ async function fetchPlayers() {
       fetchSheetData(contactSheetName)
     ]);
 
-    // DEBUG: Log raw names from Availability sheet
-    console.log("Raw Availability Names:", 
-      playerRows.slice(0,5).map(r => r.c[0]?.v?.toString()));
+    // Debug: Verify raw data from Availability sheet
+    console.log("First 5 Availability Rows (Raw):", 
+      playerRows.slice(0,5).map(r => r.c[0]?.v));
 
-    // Build contact map with STRICT matching
+    // Build contact map with strict cleaning
     const contactMap = {};
     contactRows.forEach(row => {
-      const rawName = (row.c[0]?.v?.toString() || "")
+      const rawContactName = (row.c[0]?.v?.toString() || "")
         .trim()
-        .replace(/\s+/g, ' ');
-      if (!rawName) return;
+        .replace(/\s+/g, ' ')
+        .replace(/[\u200B-\u200D\uFEFF]/g, '');
       
-      contactMap[rawName.toLowerCase()] = {
+      if (!rawContactName) return;
+      
+      contactMap[rawContactName.toLowerCase()] = {
         phone: row.c[1]?.v?.toString().replace('Text or Call: ', '') || "Not provided",
         email: row.c[2]?.v?.toString().replace('Email: ', '') || "Not provided",
         facebook: row.c[3]?.v?.toString() || "Not provided"
       };
     });
 
-    // Process players with PROPER name handling
+    // Process players with error-protected name extraction
     const processedPlayers = playerRows.map(row => {
-      const rawName = (row.c[0]?.v?.toString() || "")
-        .trim()
-        .replace(/\s+/g, ' ')
-        .replace(/[\u200B-\u200D\uFEFF]/g, ''); // Remove zero-width spaces
+      // Robust name extraction with error handling
+      const rawName = (() => {
+        try {
+          const val = row.c[0]?.v;
+          if (!val) return "";
+          return val.toString()
+            .trim()
+            .replace(/\s+/g, ' ')
+            .replace(/[\u200B-\u200D\uFEFF]/g, '');
+        } catch (e) {
+          console.warn("Name extraction error in row:", row);
+          return "";
+        }
+      })();
 
-      // DEBUG: Log name processing
-      if(!rawName) console.warn("Empty name in row:", row);
+      if (!rawName) {
+        console.warn("Empty name found in row:", row);
+        return null;
+      }
 
       return {
-        name: rawName, // PRESERVE ORIGINAL NAME
+        name: rawName, // Preserve original capitalization
         contact: contactMap[rawName.toLowerCase()] || {
           phone: "Not found",
           email: "Not found",
           facebook: "Not found"
         },
         availability: parseAvailability(row.c[7]?.v?.toString() || ""),
-        location: row.c[8]?.v?.toString().trim() || "No location"
+        location: (row.c[8]?.v?.toString() || "").trim() || "No preferred location"
       };
-    }).filter(p => p.name); // Remove empty names
+    }).filter(Boolean); // Remove null entries
 
-    console.log("Contact Map Keys:", Object.keys(contactMap));
-    console.log("Final Players:", processedPlayers);
+    // Debug logs
+    console.log("Contact Map Keys (First 5):", Object.keys(contactMap).slice(0,5));
+    console.log("Processed Players (First 5):", processedPlayers.slice(0,5));
+    
     return processedPlayers;
   } catch (error) {
-    console.error("Fetch Error:", error);
+    console.error("Critical Fetch Error:", error);
     return [];
   }
 }
