@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Player Search Portal</title>
 <style>
-  body { font-family: Arial, sans-serif; max-width: 800px; margin: 20px auto; padding: 0 10px; }
+  body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
   #searchSection { display: none; }
   input, button { width: 100%; padding: 12px; margin: 10px 0; box-sizing: border-box; }
   button { background: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer; }
@@ -35,28 +35,31 @@
 
 <script>
 (() => {
-  const sheetID = "1tvMgMHsRwQxsR6lMNlSnztmwpK7fhZeNEyqjTqmRFRc";
-  const pinSheetName = "BCAPL SIGNUP";
-  const playerSheetName = "BCAPL Availability";
-  const contactSheetName = "Contact Info";
-
-  // COLUMN INDEXES (0-based)
-  const CONTACT_COLS = {
-    NAME: 0,    // Column A
-    PHONE: 1,   // Column B
-    EMAIL: 2,   // Column C
-    FACEBOOK: 3 // Column D
-  };
-
-  const AVAILABILITY_COLS = {
-    NAME: 0,    // Column A - Player Name
-    MONDAY: 1,  // Column B - Monday Availability
-    TUESDAY: 2, // Column C - Tuesday Availability
-    WEDNESDAY: 3, // Column D - Wednesday Availability
-    THURSDAY: 4,  // Column E - Thursday Availability
-    FRIDAY: 5,    // Column F - Friday Availability
-    SATURDAY: 6,  // Column G - Saturday Availability
-    LOCATION: 7   // Column H - Location Preferences
+  const CONFIG = {
+    sheetID: "1tvMgMHsRwQxsR6lMNlSnztmwpK7fhZeNEyqjTqmRFRc",
+    sheets: {
+      pin: "BCAPL SIGNUP",
+      availability: "BCAPL Availability",
+      contact: "Contact Info"
+    },
+    columns: {
+      contact: {
+        name: 0,    // Column A
+        phone: 1,   // Column B
+        email: 2,   // Column C
+        facebook: 3 // Column D
+      },
+      availability: {
+        name: 0,    // Column A
+        monday: 1,  // Column B
+        tuesday: 2, // Column C
+        wednesday: 3, // Column D
+        thursday: 4,  // Column E
+        friday: 5,    // Column F
+        saturday: 6,  // Column G
+        location: 7   // Column H
+      }
+    }
   };
 
   let allPlayers = [];
@@ -70,91 +73,92 @@
     document.getElementById("pinMessage").innerText = "Checking PIN...";
 
     try {
-      const rows = await fetchSheetData(pinSheetName);
-      const pinExists = rows.some(row => {
-        const pinCol = row.c[11]; // Column L (index 11)
-        return pinCol && pinCol.v && pinCol.v.toString() === pin;
-      });
+      const rows = await fetchSheetData(CONFIG.sheets.pin);
+      const validPin = rows.some(row => 
+        row.c[11]?.v?.toString() === pin // Column L
+      );
 
-      if (pinExists) {
+      if (validPin) {
         document.getElementById("pinSection").style.display = "none";
         document.getElementById("searchSection").style.display = "block";
         initSearch();
       } else {
         document.getElementById("pinMessage").innerText = "Invalid PIN. Please try again.";
       }
-    } catch (e) {
-      console.error(e);
+    } catch (error) {
+      console.error("PIN Error:", error);
       document.getElementById("pinMessage").innerText = "Error verifying PIN. Please try again later.";
     }
   }
 
   async function fetchSheetData(sheetName) {
-    const url = `https://docs.google.com/spreadsheets/d/${sheetID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheetName)}`;
+    const url = `https://docs.google.com/spreadsheets/d/${CONFIG.sheetID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheetName)}`;
     const response = await fetch(url);
     const text = await response.text();
-    const json = JSON.parse(text.substring(47, text.length - 2));
-    return json.table.rows;
+    return JSON.parse(text.substring(47, text.length - 2)).table.rows;
   }
 
   async function fetchPlayers() {
     try {
-      const [playerRows, contactRows] = await Promise.all([
-        fetchSheetData(playerSheetName),
-        fetchSheetData(contactSheetName)
+      const [availabilityRows, contactRows] = await Promise.all([
+        fetchSheetData(CONFIG.sheets.availability),
+        fetchSheetData(CONFIG.sheets.contact)
       ]);
+
+      // Debug raw data
+      console.log("First 3 Availability Names:", availabilityRows.slice(0,3).map(r => r.c[CONFIG.columns.availability.name]?.v));
+      console.log("First 3 Contact Names:", contactRows.slice(0,3).map(r => r.c[CONFIG.columns.contact.name]?.v));
 
       // Build contact map
       const contactMap = {};
       contactRows.forEach(row => {
-        const name = row.c[CONTACT_COLS.NAME]?.v?.toString().trim() || "";
+        const name = row.c[CONFIG.columns.contact.name]?.v?.toString().trim();
         if (!name) return;
-        const key = name.toLowerCase();
-        contactMap[key] = {
-          phone: (row.c[CONTACT_COLS.PHONE]?.v?.toString() || "").replace("Text Only: ", "").trim() || "Not provided",
-          email: (row.c[CONTACT_COLS.EMAIL]?.v?.toString() || "").replace("Email: ", "").trim() || "Not provided",
-          facebook: (row.c[CONTACT_COLS.FACEBOOK]?.v?.toString() || "").trim() || "Not provided"
+        
+        contactMap[name.toLowerCase()] = {
+          phone: row.c[CONFIG.columns.contact.phone]?.v?.toString().replace("Text Only: ", "").trim() || "Not provided",
+          email: row.c[CONFIG.columns.contact.email]?.v?.toString().replace("Email: ", "").trim() || "Not provided",
+          facebook: row.c[CONFIG.columns.contact.facebook]?.v?.toString().trim() || "Not provided"
         };
       });
 
       // Process players with strict column mapping
-      return playerRows.map(row => {
-        const rawName = row.c[AVAILABILITY_COLS.NAME]?.v?.toString().trim() || "";
-        const key = rawName.toLowerCase();
-
+      return availabilityRows.map(row => {
+        const name = row.c[CONFIG.columns.availability.name]?.v?.toString().trim() || "Unknown Player";
+        
         return {
-          name: rawName,
-          contact: contactMap[key] || { phone: "Not found", email: "Not found", facebook: "Not found" },
-          availability: {
-            Mon: row.c[AVAILABILITY_COLS.MONDAY]?.v?.toString().trim() || "❌ Unavailable",
-            Tue: row.c[AVAILABILITY_COLS.TUESDAY]?.v?.toString().trim() || "❌ Unavailable",
-            Wed: row.c[AVAILABILITY_COLS.WEDNESDAY]?.v?.toString().trim() || "❌ Unavailable",
-            Thu: row.c[AVAILABILITY_COLS.THURSDAY]?.v?.toString().trim() || "❌ Unavailable",
-            Fri: row.c[AVAILABILITY_COLS.FRIDAY]?.v?.toString().trim() || "❌ Unavailable",
-            Sat: row.c[AVAILABILITY_COLS.SATURDAY]?.v?.toString().trim() || "❌ Unavailable",
+          name: name,
+          contact: contactMap[name.toLowerCase()] || {
+            phone: "Not found",
+            email: "Not found",
+            facebook: "Not found"
           },
-          location: row.c[AVAILABILITY_COLS.LOCATION]?.v?.toString().trim() || "No preferred location"
+          availability: {
+            Mon: row.c[CONFIG.columns.availability.monday]?.v?.toString().trim() || "❌ Unavailable",
+            Tue: row.c[CONFIG.columns.availability.tuesday]?.v?.toString().trim() || "❌ Unavailable",
+            Wed: row.c[CONFIG.columns.availability.wednesday]?.v?.toString().trim() || "❌ Unavailable",
+            Thu: row.c[CONFIG.columns.availability.thursday]?.v?.toString().trim() || "❌ Unavailable",
+            Fri: row.c[CONFIG.columns.availability.friday]?.v?.toString().trim() || "❌ Unavailable",
+            Sat: row.c[CONFIG.columns.availability.saturday]?.v?.toString().trim() || "❌ Unavailable"
+          },
+          location: row.c[CONFIG.columns.availability.location]?.v?.toString().trim() || "No location specified"
         };
-      }).filter(p => p.name);
-    } catch (e) {
-      console.error("Error fetching players:", e);
+      }).filter(p => p.name !== "Unknown Player");
+    } catch (error) {
+      console.error("Data Error:", error);
       return [];
     }
   }
 
   function renderPlayers(players) {
     const container = document.getElementById("results");
-    if (!players.length) {
-      container.innerHTML = "<p>No players found</p>";
-      return;
-    }
-    container.innerHTML = players.map(player => `
+    container.innerHTML = players.length ? players.map(player => `
       <div class="player">
         <h3>${player.name}</h3>
         <p>📞 Phone: ${player.contact.phone}</p>
         <p>📧 Email: ${player.contact.email}</p>
         <p>🔵 Facebook: ${player.contact.facebook}</p>
-        <p>📍 Location: ${player.location}</p>
+        <p>📍 Location: ${player.location.replace(/\n/g, "<br>")}</p>
         <div class="availability-grid">
           ${Object.entries(player.availability).map(([day, time]) => `
             <div class="availability-day">
@@ -164,19 +168,19 @@
           `).join('')}
         </div>
       </div>
-    `).join("");
+    `).join('') : '<p>No players found</p>';
   }
 
   async function initSearch() {
     allPlayers = await fetchPlayers();
-    console.log("Loaded players:", allPlayers);
-    const searchInput = document.getElementById("searchInput");
-    searchInput.addEventListener("input", e => {
+    console.log("Processed Players:", allPlayers);
+    
+    document.getElementById("searchInput").addEventListener("input", (e) => {
       const term = e.target.value.toLowerCase();
-      const filtered = allPlayers.filter(p =>
-        p.name.toLowerCase().includes(term) ||
-        Object.values(p.availability).some(time => time.toLowerCase().includes(term)) ||
-        p.location.toLowerCase().includes(term)
+      const filtered = allPlayers.filter(player =>
+        player.name.toLowerCase().includes(term) ||
+        Object.values(player.availability).some(time => time.toLowerCase().includes(term)) ||
+        player.location.toLowerCase().includes(term)
       );
       renderPlayers(filtered);
     });
@@ -185,6 +189,5 @@
   window.verifyPin = verifyPin;
 })();
 </script>
-
 </body>
 </html>
