@@ -1,22 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Player Search Portal</title>
-<style>
-  body { font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: auto; }
-  #searchSection { display: none; }
-  input, button { padding: 12px; margin: 10px 0; width: 100%; box-sizing: border-box; }
-  button { background: #1976d2; color: white; border: none; cursor: pointer; border-radius: 4px; }
-  #results { margin-top: 20px; }
-  #pinSection { margin-bottom: 30px; }
-  .player { background: #f9f9f9; border-radius: 8px; padding: 15px; margin: 10px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-  .player h3 { margin: 0 0 8px 0; color: #1976d2; }
-  .player p { margin: 5px 0; }
-  .availability-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; margin-top: 10px; }
-  .availability-day { padding: 8px; border-radius: 4px; background: #f0f7ff; border: 1px solid #d0e3ff; }
-  .available-slot { margin-top: 5px; padding: 4px; background: #e6f7d9; border-radius: 3px; font-size: 0.9em; }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Player Search Portal</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: auto; }
+    #searchSection { display: none; }
+    input, button { padding: 12px; margin: 10px 0; width: 100%; box-sizing: border-box; }
+    button { background: #1976d2; color: white; border: none; cursor: pointer; border-radius: 4px; }
+    #results { margin-top: 20px; }
+    #pinSection { margin-bottom: 30px; }
+    .player { background: #f9f9f9; border-radius: 8px; padding: 15px; margin: 10px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .player h3 { margin: 0 0 8px 0; color: #1976d2; }
+    .player p { margin: 5px 0; }
+    .availability-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; margin-top: 10px; }
+    .availability-day { padding: 8px; border-radius: 4px; background: #f0f7ff; border: 1px solid #d0e3ff; }
+    .available-slot { margin-top: 5px; padding: 4px; background: #e6f7d9; border-radius: 3px; font-size: 0.9em; }
+  </style>
 </head>
 <body>
 
@@ -49,9 +50,14 @@
   };
 
   const AVAILABILITY_COLS = {
-    NAME: 0,    // CONFIRM THIS IS CORRECT COLUMN
-    LOCATION: 8,
-    AVAILABILITY: 7
+    NAME: 0,    // Column A
+    MONDAY: 1,  // Column B
+    TUESDAY: 2, // Column C
+    WEDNESDAY: 3, // Column D
+    THURSDAY: 4,  // Column E
+    FRIDAY: 5,    // Column F
+    SATURDAY: 6,  // Column G
+    LOCATION: 7   // Column H
   };
 
   let allPlayers = [];
@@ -99,22 +105,15 @@
         fetchSheetData(contactSheetName)
       ]);
 
-      // DEBUG: Verify name column data
-      console.log("First 3 Availability Names:", 
-        playerRows.slice(0, 3).map(row => row.c[AVAILABILITY_COLS.NAME]?.v)
-      );
-
       // Build contact map
       const contactMap = {};
       contactRows.forEach(row => {
         const rawName = row.c[CONTACT_COLS.NAME]?.v?.toString().trim() || "";
         const normalizedName = rawName.toLowerCase().replace(/\s+/g, ' ');
 
-        if (!normalizedName) return;
-
         contactMap[normalizedName] = {
           phone: row.c[CONTACT_COLS.PHONE]?.v?.toString()
-            .replace('Text or Call: ', '')
+            .replace('Text Only: ', '')
             .trim() || "Not provided",
           email: row.c[CONTACT_COLS.EMAIL]?.v?.toString()
             .replace('Email: ', '')
@@ -124,58 +123,33 @@
         };
       });
 
-      // Process players with enhanced debugging
-      return playerRows
-        .map(row => {
-          const rawName = row.c[AVAILABILITY_COLS.NAME]?.v?.toString().trim() || "";
-          const normalizedName = rawName.toLowerCase().replace(/\s+/g, ' ');
+      // Process players
+      return playerRows.map(row => {
+        const rawName = row.c[AVAILABILITY_COLS.NAME]?.v?.toString().trim() || "";
+        const normalizedName = rawName.toLowerCase().replace(/\s+/g, ' ');
 
-          // DEBUG: Track name matching
-          if (rawName.toLowerCase().includes("mark")) {
-            console.log(`Matching "${rawName}" to contacts...`, 
-              contactMap[normalizedName] ? "FOUND" : "MISSING");
-          }
-
-          return {
-            name: rawName, // Preserve original capitalization
-            contact: contactMap[normalizedName] || {
-              phone: "Not found",
-              email: "Not found",
-              facebook: "Not found"
-            },
-            availability: parseAvailability(row.c[AVAILABILITY_COLS.AVAILABILITY]?.v?.toString() || ""),
-            location: row.c[AVAILABILITY_COLS.LOCATION]?.v?.toString().trim() || "No preferred location"
-          };
-        })
-        .filter(player => player.name);
+        return {
+          name: rawName,
+          contact: contactMap[normalizedName] || {
+            phone: "Not found",
+            email: "Not found",
+            facebook: "Not found"
+          },
+          availability: {
+            Mon: row.c[AVAILABILITY_COLS.MONDAY]?.v?.toString().trim() || "❌ Unavailable",
+            Tue: row.c[AVAILABILITY_COLS.TUESDAY]?.v?.toString().trim() || "❌ Unavailable",
+            Wed: row.c[AVAILABILITY_COLS.WEDNESDAY]?.v?.toString().trim() || "❌ Unavailable",
+            Thu: row.c[AVAILABILITY_COLS.THURSDAY]?.v?.toString().trim() || "❌ Unavailable",
+            Fri: row.c[AVAILABILITY_COLS.FRIDAY]?.v?.toString().trim() || "❌ Unavailable",
+            Sat: row.c[AVAILABILITY_COLS.SATURDAY]?.v?.toString().trim() || "❌ Unavailable"
+          },
+          location: row.c[AVAILABILITY_COLS.LOCATION]?.v?.toString().trim() || "No preferred location"
+        };
+      }).filter(player => player.name);
     } catch (error) {
       console.error("Error:", error);
       return [];
     }
-  }
-
-  function parseAvailability(availabilityText) {
-    const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-    const result = {};
-    days.forEach(day => result[day] = "❌ Unavailable");
-
-    availabilityText.split("Day:").forEach(dayBlock => {
-      if (!dayBlock.trim()) return;
-      
-      const dayMatch = dayBlock.match(/Monday|Tuesday|Wednesday|Thursday|Friday|Saturday/i);
-      const fromMatch = dayBlock.match(/From: ([0-9a-z:]+)/i);
-      const toMatch = dayBlock.match(/Until: ([0-9a-z: ]+)/i);
-      
-      if (dayMatch && fromMatch && toMatch) {
-        const shortDay = dayMatch[0].substring(0, 3);
-        const timeSlot = `${fromMatch[1].trim()} - ${toMatch[1].trim()}`;
-        result[shortDay] = result[shortDay] === "❌ Unavailable" 
-          ? timeSlot 
-          : `${result[shortDay]}<br>${timeSlot}`;
-      }
-    });
-
-    return result;
   }
 
   function renderPlayers(list) {
@@ -188,10 +162,10 @@
         <p>🔵 Facebook: ${player.contact.facebook}</p>
         <p>📍 Location: ${player.location.split('\n').map(loc => loc.trim()).join('<br>')}</p>
         <div class="availability-grid">
-          ${["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(day => `
+          ${Object.entries(player.availability).map(([day, time]) => `
             <div class="availability-day">
               <strong>${day}</strong>
-              <div class="available-slot">${player.availability[day]}</div>
+              <div class="available-slot">${time}</div>
             </div>
           `).join('')}
         </div>
