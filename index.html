@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <title>Player Search Portal</title>
 <style>
-  /* Keep all previous CSS styles unchanged */
   body { font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: auto; }
   #searchSection { display: none; }
   input, button { padding: 12px; margin: 10px 0; width: 100%; box-sizing: border-box; }
@@ -85,24 +84,38 @@ async function fetchPlayers() {
       fetchSheetData(contactSheetName)
     ]);
 
-    // Build contact map from Contact Info tab
+    // Build contact map with original name preservation
     const contactMap = {};
     contactRows.forEach(row => {
-      const name = row.c[0]?.v?.toString().trim().toLowerCase() || "";
-      contactMap[name] = {
+      const originalName = row.c[0]?.v?.toString().trim() || "";
+      const normalizedName = originalName.toLowerCase();
+      contactMap[normalizedName] = {
+        originalName: originalName, // Preserve original casing
         phone: row.c[1]?.v?.toString().replace('Text or Call: ', '') || "Not provided",
         email: row.c[2]?.v?.toString().replace('Email: ', '') || "Not provided",
         facebook: row.c[3]?.v?.toString() || "Not provided"
       };
     });
 
-    // Process BCAPL Availability tab
-    return playerRows.map(row => ({
-      name: row.c[0]?.v?.toString().trim() || "",
-      contact: contactMap[row.c[0]?.v?.toString().trim().toLowerCase()] || {},
-      availability: parseAvailability(row.c[7]?.v?.toString() || ""), // Column H
-      location: row.c[8]?.v?.toString().trim() || "No preferred location" // Column I
-    }));
+    // Process players with strict name preservation
+    const processedPlayers = playerRows.map(row => {
+      const rawName = row.c[0]?.v?.toString().trim() || "";
+      const normalizedName = rawName.toLowerCase();
+      
+      return {
+        name: rawName, // Always use original name from Availability sheet
+        contact: contactMap[normalizedName] || {
+          phone: "Not found",
+          email: "Not found",
+          facebook: "Not found"
+        },
+        availability: parseAvailability(row.c[7]?.v?.toString() || ""),
+        location: row.c[8]?.v?.toString().trim() || "No preferred location"
+      };
+    }).filter(p => p.name); // Remove empty names
+
+    console.log("Name Debug:", processedPlayers.slice(0,3).map(p => p.name));
+    return processedPlayers;
   } catch (error) {
     console.error("Error:", error);
     return [];
@@ -156,7 +169,7 @@ function renderPlayers(list) {
 
 async function initSearch() {
   allPlayers = await fetchPlayers();
-  console.log("Sanitized Player Data:", allPlayers[0]);
+  console.log("Loaded Players:", allPlayers);
   
   const searchInput = document.getElementById("searchInput");
   searchInput.addEventListener("input", e => {
