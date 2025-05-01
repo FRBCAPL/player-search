@@ -2,20 +2,21 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Player Search Portal</title>
 <style>
-  body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+  /* Keep all previous CSS styles unchanged */
+  body { font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: auto; }
   #searchSection { display: none; }
-  input, button { width: 100%; padding: 12px; margin: 10px 0; box-sizing: border-box; }
-  button { background: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer; }
+  input, button { padding: 12px; margin: 10px 0; width: 100%; box-sizing: border-box; }
+  button { background: #1976d2; color: white; border: none; cursor: pointer; border-radius: 4px; }
   #results { margin-top: 20px; }
-  .player { background: #f9f9f9; border-radius: 8px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-  .player h3 { margin: 0 0 8px; color: #1976d2; }
-  .player p { margin: 4px 0; }
-  .availability-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; margin-top: 10px; }
-  .availability-day { background: #f0f7ff; border: 1px solid #cce0ff; border-radius: 4px; padding: 6px; }
-  .available-slot { font-size: 0.9em; margin-top: 4px; background: #e6f7d9; border-radius: 3px; padding: 4px; }
+  #pinSection { margin-bottom: 30px; }
+  .player { background: #f9f9f9; border-radius: 8px; padding: 15px; margin: 10px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+  .player h3 { margin: 0 0 8px 0; color: #1976d2; }
+  .player p { margin: 5px 0; }
+  .availability-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; margin-top: 10px; }
+  .availability-day { padding: 8px; border-radius: 4px; background: #f0f7ff; border: 1px solid #d0e3ff; }
+  .available-slot { margin-top: 5px; padding: 4px; background: #e6f7d9; border-radius: 3px; font-size: 0.9em; }
 </style>
 </head>
 <body>
@@ -34,160 +35,140 @@
 </div>
 
 <script>
-(() => {
-  const CONFIG = {
-    sheetID: "1tvMgMHsRwQxsR6lMNlSnztmwpK7fhZeNEyqjTqmRFRc",
-    sheets: {
-      pin: "BCAPL SIGNUP",
-      availability: "BCAPL Availability",
-      contact: "Contact Info"
-    },
-    columns: {
-      contact: {
-        name: 0,    // Column A
-        phone: 1,   // Column B
-        email: 2,   // Column C
-        facebook: 3 // Column D
-      },
-      availability: {
-        name: 0,    // Column A
-        monday: 1,  // Column B
-        tuesday: 2, // Column C
-        wednesday: 3, // Column D
-        thursday: 4,  // Column E
-        friday: 5,    // Column F
-        saturday: 6,  // Column G
-        location: 7   // Column H
-      }
-    }
-  };
+const sheetID = "1tvMgMHsRwQxsR6lMNlSnztmwpK7fhZeNEyqjTqmRFRc";
+const pinSheetName = "BCAPL SIGNUP";
+const playerSheetName = "BCAPL Availability";
+const contactSheetName = "Contact Info";
 
-  let allPlayers = [];
+let allPlayers = [];
 
-  async function verifyPin() {
-    const pin = document.getElementById("pinInput").value.trim();
-    if (!pin) {
-      document.getElementById("pinMessage").innerText = "Please enter a PIN.";
-      return;
-    }
-    document.getElementById("pinMessage").innerText = "Checking PIN...";
-
-    try {
-      const rows = await fetchSheetData(CONFIG.sheets.pin);
-      const validPin = rows.some(row => 
-        row.c[11]?.v?.toString() === pin // Column L
-      );
-
-      if (validPin) {
-        document.getElementById("pinSection").style.display = "none";
-        document.getElementById("searchSection").style.display = "block";
-        initSearch();
-      } else {
-        document.getElementById("pinMessage").innerText = "Invalid PIN. Please try again.";
-      }
-    } catch (error) {
-      console.error("PIN Error:", error);
-      document.getElementById("pinMessage").innerText = "Error verifying PIN. Please try again later.";
-    }
+async function verifyPin() {
+  const pin = document.getElementById("pinInput").value.trim();
+  if (!pin) {
+    document.getElementById("pinMessage").innerText = "Please enter a PIN.";
+    return;
   }
+  document.getElementById("pinMessage").innerText = "Checking PIN...";
 
-  async function fetchSheetData(sheetName) {
-    const url = `https://docs.google.com/spreadsheets/d/${CONFIG.sheetID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheetName)}`;
-    const response = await fetch(url);
-    const text = await response.text();
-    return JSON.parse(text.substring(47, text.length - 2)).table.rows;
-  }
-
-  async function fetchPlayers() {
-    try {
-      const [availabilityRows, contactRows] = await Promise.all([
-        fetchSheetData(CONFIG.sheets.availability),
-        fetchSheetData(CONFIG.sheets.contact)
-      ]);
-
-      // Debug raw data
-      console.log("First 3 Availability Names:", availabilityRows.slice(0,3).map(r => r.c[CONFIG.columns.availability.name]?.v));
-      console.log("First 3 Contact Names:", contactRows.slice(0,3).map(r => r.c[CONFIG.columns.contact.name]?.v));
-
-      // Build contact map
-      const contactMap = {};
-      contactRows.forEach(row => {
-        const name = row.c[CONFIG.columns.contact.name]?.v?.toString().trim();
-        if (!name) return;
-        
-        contactMap[name.toLowerCase()] = {
-          phone: row.c[CONFIG.columns.contact.phone]?.v?.toString().replace("Text Only: ", "").trim() || "Not provided",
-          email: row.c[CONFIG.columns.contact.email]?.v?.toString().replace("Email: ", "").trim() || "Not provided",
-          facebook: row.c[CONFIG.columns.contact.facebook]?.v?.toString().trim() || "Not provided"
-        };
-      });
-
-      // Process players with strict column mapping
-      return availabilityRows.map(row => {
-        const name = row.c[CONFIG.columns.availability.name]?.v?.toString().trim() || "Unknown Player";
-        
-        return {
-          name: name,
-          contact: contactMap[name.toLowerCase()] || {
-            phone: "Not found",
-            email: "Not found",
-            facebook: "Not found"
-          },
-          availability: {
-            Mon: row.c[CONFIG.columns.availability.monday]?.v?.toString().trim() || "❌ Unavailable",
-            Tue: row.c[CONFIG.columns.availability.tuesday]?.v?.toString().trim() || "❌ Unavailable",
-            Wed: row.c[CONFIG.columns.availability.wednesday]?.v?.toString().trim() || "❌ Unavailable",
-            Thu: row.c[CONFIG.columns.availability.thursday]?.v?.toString().trim() || "❌ Unavailable",
-            Fri: row.c[CONFIG.columns.availability.friday]?.v?.toString().trim() || "❌ Unavailable",
-            Sat: row.c[CONFIG.columns.availability.saturday]?.v?.toString().trim() || "❌ Unavailable"
-          },
-          location: row.c[CONFIG.columns.availability.location]?.v?.toString().trim() || "No location specified"
-        };
-      }).filter(p => p.name !== "Unknown Player");
-    } catch (error) {
-      console.error("Data Error:", error);
-      return [];
-    }
-  }
-
-  function renderPlayers(players) {
-    const container = document.getElementById("results");
-    container.innerHTML = players.length ? players.map(player => `
-      <div class="player">
-        <h3>${player.name}</h3>
-        <p>📞 Phone: ${player.contact.phone}</p>
-        <p>📧 Email: ${player.contact.email}</p>
-        <p>🔵 Facebook: ${player.contact.facebook}</p>
-        <p>📍 Location: ${player.location.replace(/\n/g, "<br>")}</p>
-        <div class="availability-grid">
-          ${Object.entries(player.availability).map(([day, time]) => `
-            <div class="availability-day">
-              <strong>${day}</strong>
-              <div class="available-slot">${time}</div>
-            </div>
-          `).join('')}
-        </div>
-      </div>
-    `).join('') : '<p>No players found</p>';
-  }
-
-  async function initSearch() {
-    allPlayers = await fetchPlayers();
-    console.log("Processed Players:", allPlayers);
-    
-    document.getElementById("searchInput").addEventListener("input", (e) => {
-      const term = e.target.value.toLowerCase();
-      const filtered = allPlayers.filter(player =>
-        player.name.toLowerCase().includes(term) ||
-        Object.values(player.availability).some(time => time.toLowerCase().includes(term)) ||
-        player.location.toLowerCase().includes(term)
-      );
-      renderPlayers(filtered);
+  try {
+    const rows = await fetchSheetData(pinSheetName);
+    const pinExists = rows.some(row => {
+      const pinCol = row.c[11]; // Column L (index 11)
+      return pinCol && pinCol.v && pinCol.v.toString() === pin;
     });
-  }
 
-  window.verifyPin = verifyPin;
-})();
+    if (pinExists) {
+      document.getElementById("pinSection").style.display = "none";
+      document.getElementById("searchSection").style.display = "block";
+      initSearch();
+    } else {
+      document.getElementById("pinMessage").innerText = "Invalid PIN. Please try again.";
+    }
+  } catch (error) {
+    console.error("Error:", error);
+    document.getElementById("pinMessage").innerText = "Error verifying PIN. Please try again later.";
+  }
+}
+
+async function fetchSheetData(sheetName) {
+  const url = `https://docs.google.com/spreadsheets/d/${sheetID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheetName)}`;
+  const response = await fetch(url);
+  const text = await response.text();
+  const json = JSON.parse(text.substr(47).slice(0, -2));
+  return json.table.rows;
+}
+
+async function fetchPlayers() {
+  try {
+    const [playerRows, contactRows] = await Promise.all([
+      fetchSheetData(playerSheetName),
+      fetchSheetData(contactSheetName)
+    ]);
+
+    // Build contact map from Contact Info tab
+    const contactMap = {};
+    contactRows.forEach(row => {
+      const name = row.c[0]?.v?.toString().trim().toLowerCase() || "";
+      contactMap[name] = {
+        phone: row.c[1]?.v?.toString().replace('Text or Call: ', '') || "Not provided",
+        email: row.c[2]?.v?.toString().replace('Email: ', '') || "Not provided",
+        facebook: row.c[3]?.v?.toString() || "Not provided"
+      };
+    });
+
+    // Process BCAPL Availability tab
+    return playerRows.map(row => ({
+      name: row.c[0]?.v?.toString().trim() || "",
+      contact: contactMap[row.c[0]?.v?.toString().trim().toLowerCase()] || {},
+      availability: parseAvailability(row.c[7]?.v?.toString() || ""), // Column H
+      location: row.c[8]?.v?.toString().trim() || "No preferred location" // Column I
+    }));
+  } catch (error) {
+    console.error("Error:", error);
+    return [];
+  }
+}
+
+function parseAvailability(availabilityText) {
+  const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const result = {};
+  days.forEach(day => result[day] = "❌ Unavailable");
+
+  availabilityText.split("Day:").forEach(dayBlock => {
+    if (!dayBlock.trim()) return;
+    
+    const dayMatch = dayBlock.match(/Monday|Tuesday|Wednesday|Thursday|Friday|Saturday/i);
+    const fromMatch = dayBlock.match(/From: ([0-9a-z:]+)/i);
+    const toMatch = dayBlock.match(/Until: ([0-9a-z: ]+)/i);
+    
+    if (dayMatch && fromMatch && toMatch) {
+      const shortDay = dayMatch[0].substring(0, 3);
+      const timeSlot = `${fromMatch[1].trim()} - ${toMatch[1].trim()}`;
+      result[shortDay] = result[shortDay] === "❌ Unavailable" 
+        ? timeSlot 
+        : `${result[shortDay]}<br>${timeSlot}`;
+    }
+  });
+
+  return result;
+}
+
+function renderPlayers(list) {
+  const container = document.getElementById("results");
+  container.innerHTML = list.length ? list.map(player => `
+    <div class="player">
+      <h3>${player.name}</h3>
+      <p>📞 Phone: ${player.contact.phone}</p>
+      <p>📧 Email: ${player.contact.email}</p>
+      <p>🔵 Facebook: ${player.contact.facebook}</p>
+      <p>📍 Location: ${player.location.split('\n').map(loc => loc.trim()).join('<br>')}</p>
+      <div class="availability-grid">
+        ${["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(day => `
+          <div class="availability-day">
+            <strong>${day}</strong>
+            <div class="available-slot">${player.availability[day]}</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `).join("") : "<p>No players found</p>";
+}
+
+async function initSearch() {
+  allPlayers = await fetchPlayers();
+  console.log("Sanitized Player Data:", allPlayers[0]);
+  
+  const searchInput = document.getElementById("searchInput");
+  searchInput.addEventListener("input", e => {
+    const term = e.target.value.toLowerCase();
+    const filtered = allPlayers.filter(p => 
+      p.name.toLowerCase().includes(term) || 
+      Object.values(p.availability).some(time => time.toLowerCase().includes(term)) ||
+      p.location.toLowerCase().includes(term)
+    );
+    renderPlayers(filtered);
+  });
+}
 </script>
 </body>
 </html>
