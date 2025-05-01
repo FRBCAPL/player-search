@@ -67,7 +67,7 @@
     try {
       const rows = await fetchSheetData(pinSheetName);
       const pinExists = rows.some(row => {
-        const pinCol = row.c[11]; // Column L (index 11)
+        const pinCol = row.c[11];
         return pinCol && pinCol.v && pinCol.v.toString() === pin;
       });
 
@@ -99,6 +99,10 @@
         fetchSheetData(contactSheetName)
       ]);
 
+      // DEBUG: Show raw sheet data
+      console.log("First Contact Row:", contactRows[0]?.c?.map(c => c?.v));
+      console.log("First Player Row:", playerRows[0]?.c?.map(c => c?.v));
+
       // Build contact map with strict cleaning
       const contactMap = {};
       contactRows.forEach(row => {
@@ -119,8 +123,13 @@
         };
       });
 
+      // DEBUG: Show sample contact
+      console.log("Contact Map Sample:", 
+        Object.entries(contactMap).slice(0, 3)
+      );
+
       // Process players with strict matching
-      return playerRows
+      const processed = playerRows
         .map(row => {
           const rawName = row.c[AVAILABILITY_COLS.NAME]?.v?.toString().trim() || "";
           const normalizedName = rawName.toLowerCase().replace(/\s+/g, ' ');
@@ -136,7 +145,13 @@
             location: row.c[AVAILABILITY_COLS.LOCATION]?.v?.toString().trim() || "No preferred location"
           };
         })
-        .filter(player => player.name); // Remove empty names
+        .filter(player => player.name);
+
+      // DEBUG: Show name matching
+      const testName = "mark test 5";
+      console.log(`Contact for "${testName}":`, contactMap[testName.toLowerCase()] || "NOT FOUND");
+      
+      return processed;
     } catch (error) {
       console.error("Error:", error);
       return [];
