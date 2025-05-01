@@ -137,38 +137,18 @@ async function fetchPlayers() {
 
 
 
- // Process players from AVAILABILITY sheet
-    {
-        name: toProperCase(fullName),
-        contact: contactMap[fullName.toLowerCase()] || {
-          phone: "Not found",
-          email: "Not found",
-          facebook: "Not found"
-        },
-        availability: parseAvailability(row.c[7]?.v?.toString() || ""),
-        location: row.c[8]?.v?.toString().trim() || "No location"
-      };
-    }).filter(p => p.name);
-
-    console.log("Final Players:", processedPlayers);
-    return processedPlayers;
-  } catch (error) {
-    console.error("Fetch Error:", error);
-    return [];
-  }
-}
-
 function parseAvailability(text) {
   const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const result = {};
   days.forEach(day => result[day] = "❌ Unavailable");
 
-  text.split("Day:").forEach(dayBlock => {
-    if (!dayBlock.trim()) return;
-    
+  // Add this line to clean the text
+  text = (text || "").replace(/\n/g, " ").replace(/\s+/g, " ");
+
+  text.split("Day:").slice(1).forEach(dayBlock => {  // slice(1) removes empty first element
     const dayMatch = dayBlock.match(/Monday|Tuesday|Wednesday|Thursday|Friday|Saturday/i);
-    const fromMatch = dayBlock.match(/From: ([0-9a-z:]+)/i);
-    const toMatch = dayBlock.match(/Until: ([0-9a-z: ]+)/i);
+    const fromMatch = dayBlock.match(/From:\s*([0-9apm:]+)/i);
+    const toMatch = dayBlock.match(/Until:\s*([0-9apm: ]+)/i);
     
     if (dayMatch && fromMatch && toMatch) {
       const shortDay = dayMatch[0].substring(0, 3);
@@ -181,6 +161,7 @@ function parseAvailability(text) {
 
   return result;
 }
+
 
 function renderPlayers(players) {
   const container = document.getElementById("results");
