@@ -121,7 +121,7 @@ async function fetchPlayers() {
       fetchSheetData(contactSheetName)
     ]);
 
-    // Create contact map (case-insensitive)
+    // Build contact map
     const contactMap = {};
     contactRows.forEach(row => {
       const name = row.c[0]?.v?.toString().trim().toLowerCase() || "";
@@ -131,7 +131,7 @@ async function fetchPlayers() {
       contactMap[name] = { phone, email, facebook };
     });
 
-    // Process availability data (columns B-G = Mon-Sat)
+    // Map each day explicitly
     return playerRows.map(row => ({
       name: row.c[0]?.v?.toString().trim() || "",
       contact: contactMap[row.c[0]?.v?.toString().trim().toLowerCase()] || {},
@@ -151,6 +151,7 @@ async function fetchPlayers() {
   }
 }
 
+
 function renderPlayers(list) {
   const container = document.getElementById("results");
   container.innerHTML = list.length ? list.map(player => `
@@ -160,18 +161,20 @@ function renderPlayers(list) {
       <p>📧 Email: ${player.contact.email || "Not provided"}</p>
       <p>🔵 Facebook: ${player.contact.facebook || "Not provided"}</p>
       <p>📍 Location: ${player.location}</p>
-      
       <div class="availability-grid">
-        ${Object.entries(player.availability).map(([day, time]) => `
+        ${["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(day => `
           <div class="availability-day">
             <strong>${day}</strong>
-            ${time ? `<div class="available-slot">${formatTimeSlots(time)}</div>` : '<div class="available-slot">❌ Unavailable</div>'}
+            ${player.availability[day] 
+              ? `<div class="available-slot">${player.availability[day].split(',').map(slot => slot.trim()).join('<br>')}</div>`
+              : '<div class="available-slot">❌ Unavailable</div>'}
           </div>
         `).join('')}
       </div>
     </div>
   `).join("") : "<p>No players found</p>";
 }
+
 
 // Helper to format time slots (e.g., "10am-6pm, 1030pm-11pm" → separate lines)
 function formatTimeSlots(timeString) {
