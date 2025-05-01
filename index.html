@@ -66,7 +66,7 @@ async function verifyPin() {
   try {
     const rows = await fetchSheetData(pinSheetName);
     const pinExists = rows.some(row => {
-      const pinCol = row.c[11]; // Column L (index 11)
+      const pinCol = row.c[11];
       return pinCol && pinCol.v && pinCol.v.toString() === pin;
     });
 
@@ -98,12 +98,12 @@ async function fetchPlayers() {
       fetchSheetData(contactSheetName)
     ]);
 
-    // Build contact map with strict cleaning
+    // Build contact map
     const contactMap = {};
     contactRows.forEach(row => {
       const rawName = row.c[CONTACT_COLS.NAME]?.v?.toString().trim() || "";
       const normalizedName = rawName.toLowerCase().replace(/\s+/g, ' ');
-
+      
       contactMap[normalizedName] = {
         phone: row.c[CONTACT_COLS.PHONE]?.v?.toString()
           .replace('Text or Call: ', '')
@@ -116,56 +116,11 @@ async function fetchPlayers() {
       };
     });
 
-    // Process players with strict matching
+    // Process players
     return playerRows.map(row => {
       const rawName = row.c[AVAILABILITY_COLS.NAME]?.v?.toString().trim() || "";
       const normalizedName = rawName.toLowerCase().replace(/\s+/g, ' ');
-
-      return {
-        name: rawName,
-        contact: contactMap[normalizedName] || {
-          phone: "Not found",
-          email: "Not found",
-          facebook: "Not found"
-        },
-        availability: parseAvailability(row.c[AVAILABILITY_COLS.AVAILABILITY]?.v?.toString() || ""),
-        location: row.c[AVAILABILITY_COLS.LOCATION]?.v?.toString().trim() || "No preferred location"
-      };
-    });
-  } catch (error) {
-    console.error("Error:", error);
-    return [];
-  }
-}
-
-    // Process players with strict matching
-    return playerRows.map(row => {
-      const rawName = row.c[AVAILABILITY_COLS.NAME]?.v?.toString().trim() || "";
-      const normalizedName = rawName.toLowerCase().replace(/\s+/g, ' ');
-
-      return {
-        name: rawName,
-        contact: contactMap[normalizedName] || {
-          phone: "Not found",
-          email: "Not found",
-          facebook: "Not found"
-        },
-        availability: parseAvailability(row.c[AVAILABILITY_COLS.AVAILABILITY]?.v?.toString() || ""),
-        location: row.c[AVAILABILITY_COLS.LOCATION]?.v?.toString().trim() || "No preferred location"
-      };
-    });
-  } catch (error) {
-    console.error("Error:", error);
-    return [];
-  }
-}
-
-
-    // Process player data with strict name matching
-    return playerRows.map(row => {
-      const rawName = row.c[AVAILABILITY_COLS.NAME]?.v?.toString().trim() || "";
-      const normalizedName = rawName.toLowerCase().replace(/\s+/g, ' ');
-
+      
       return {
         name: rawName,
         contact: contactMap[normalizedName] || {
@@ -230,7 +185,7 @@ function renderPlayers(list) {
 
 async function initSearch() {
   allPlayers = await fetchPlayers();
-  console.log("Processed Players:", allPlayers);
+  console.log("Loaded players:", allPlayers);
   
   const searchInput = document.getElementById("searchInput");
   searchInput.addEventListener("input", e => {
