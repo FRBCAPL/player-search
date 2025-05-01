@@ -105,13 +105,21 @@
         fetchSheetData(contactSheetName)
       ]);
 
-      // Build contact map
+      // Debug raw name data
+      console.log("First 3 Availability Names:", 
+        playerRows.slice(0, 3).map(row => row.c[AVAILABILITY_COLS.NAME]?.v));
+      console.log("First 3 Contact Names:", 
+        contactRows.slice(0, 3).map(row => row.c[CONTACT_COLS.NAME]?.v));
+
+      // Build contact map with exact name matching
       const contactMap = {};
       contactRows.forEach(row => {
         const rawName = row.c[CONTACT_COLS.NAME]?.v?.toString().trim() || "";
-        const normalizedName = rawName.toLowerCase().replace(/\s+/g, ' ');
+        if (!rawName) return;
 
-        contactMap[normalizedName] = {
+        // Use exact lowercase match but preserve original name
+        contactMap[rawName.toLowerCase()] = {
+          rawName: rawName, // Preserve original formatting
           phone: row.c[CONTACT_COLS.PHONE]?.v?.toString()
             .replace('Text Only: ', '')
             .trim() || "Not provided",
@@ -123,14 +131,23 @@
         };
       });
 
-      // Process players
+      // Process players with strict name preservation
       return playerRows.map(row => {
         const rawName = row.c[AVAILABILITY_COLS.NAME]?.v?.toString().trim() || "";
-        const normalizedName = rawName.toLowerCase().replace(/\s+/g, ' ');
+        const normalizedName = rawName.toLowerCase();
+
+        // Find exact match or closest partial match
+        let contact = contactMap[normalizedName];
+        if (!contact) {
+          const partialMatch = Object.keys(contactMap).find(key => 
+            normalizedName.includes(key) || key.includes(normalizedName)
+          );
+          contact = partialMatch ? contactMap[partialMatch] : null;
+        }
 
         return {
-          name: rawName,
-          contact: contactMap[normalizedName] || {
+          name: rawName, // Always use availability sheet's original name
+          contact: contact || {
             phone: "Not found",
             email: "Not found",
             facebook: "Not found"
