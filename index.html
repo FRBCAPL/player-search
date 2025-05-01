@@ -138,6 +138,28 @@ async function fetchPlayers() {
   }
 }
 
+    // Process players with strict matching
+    return playerRows.map(row => {
+      const rawName = row.c[AVAILABILITY_COLS.NAME]?.v?.toString().trim() || "";
+      const normalizedName = rawName.toLowerCase().replace(/\s+/g, ' ');
+
+      return {
+        name: rawName,
+        contact: contactMap[normalizedName] || {
+          phone: "Not found",
+          email: "Not found",
+          facebook: "Not found"
+        },
+        availability: parseAvailability(row.c[AVAILABILITY_COLS.AVAILABILITY]?.v?.toString() || ""),
+        location: row.c[AVAILABILITY_COLS.LOCATION]?.v?.toString().trim() || "No preferred location"
+      };
+    });
+  } catch (error) {
+    console.error("Error:", error);
+    return [];
+  }
+}
+
 
     // Process player data with strict name matching
     return playerRows.map(row => {
