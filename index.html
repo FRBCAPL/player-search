@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <title>Player Search Portal</title>
 <style>
-  /* Keep all previous CSS styles unchanged */
   body { font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: auto; }
   #searchSection { display: none; }
   input, button { padding: 12px; margin: 10px 0; width: 100%; box-sizing: border-box; }
@@ -39,6 +38,20 @@ const sheetID = "1tvMgMHsRwQxsR6lMNlSnztmwpK7fhZeNEyqjTqmRFRc";
 const pinSheetName = "BCAPL SIGNUP";
 const playerSheetName = "BCAPL Availability";
 const contactSheetName = "Contact Info";
+
+// Column indexes (0-based)
+const CONTACT_COLS = {
+  NAME: 0,
+  PHONE: 1,
+  EMAIL: 2,
+  FACEBOOK: 3
+};
+
+const AVAILABILITY_COLS = {
+  NAME: 0,
+  LOCATION: 8,
+  AVAILABILITY: 7
+};
 
 let allPlayers = [];
 
@@ -85,32 +98,39 @@ async function fetchPlayers() {
       fetchSheetData(contactSheetName)
     ]);
 
-    // DEBUG: Verify contact data structure
-    console.log("Contact Row Example:", contactRows[0]?.c?.map(c => c?.v));
+    /* DEBUG: Verify data structure */
+    console.log("First Contact Info Row:", contactRows[0]?.c?.map(c => c?.v));
+    console.log("First Availability Row:", playerRows[0]?.c?.map(c => c?.v));
 
-    // Build contact map with error-proof formatting
+    // Build contact map with normalized names
     const contactMap = {};
     contactRows.forEach(row => {
-      const name = row.c[0]?.v?.toString().trim().toLowerCase() || "";
-      contactMap[name] = {
-        phone: row.c[1]?.v?.toString().replace('Text or Call: ', '') || "Not provided",
-        email: row.c[2]?.v?.toString().replace('Email: ', '') || "Not provided",
-        facebook: row.c[3]?.v?.toString() || "Not provided"
+      const rawName = row.c[CONTACT_COLS.NAME]?.v?.toString().trim() || "";
+      const normalizedName = rawName.toLowerCase().replace(/\s+/g, ' ');
+
+      if (!normalizedName) return;
+
+      contactMap[normalizedName] = {
+        phone: row.c[CONTACT_COLS.PHONE]?.v?.toString().replace('Text or Call: ', '') || "Not provided",
+        email: row.c[CONTACT_COLS.EMAIL]?.v?.toString().replace('Email: ', '') || "Not provided",
+        facebook: row.c[CONTACT_COLS.FACEBOOK]?.v?.toString() || "Not provided"
       };
     });
 
-    // Process player data with contact matching
+    // Process player data with strict name matching
     return playerRows.map(row => {
-      const name = row.c[0]?.v?.toString().trim() || "";
+      const rawName = row.c[AVAILABILITY_COLS.NAME]?.v?.toString().trim() || "";
+      const normalizedName = rawName.toLowerCase().replace(/\s+/g, ' ');
+
       return {
-        name,
-        contact: contactMap[name.toLowerCase()] || {
+        name: rawName,
+        contact: contactMap[normalizedName] || {
           phone: "Not found",
           email: "Not found",
           facebook: "Not found"
         },
-        availability: parseAvailability(row.c[7]?.v?.toString() || ""),
-        location: row.c[8]?.v?.toString().trim() || "No preferred location"
+        availability: parseAvailability(row.c[AVAILABILITY_COLS.AVAILABILITY]?.v?.toString() || ""),
+        location: row.c[AVAILABILITY_COLS.LOCATION]?.v?.toString().trim() || "No preferred location"
       };
     });
   } catch (error) {
@@ -118,7 +138,6 @@ async function fetchPlayers() {
     return [];
   }
 }
-
 
 function parseAvailability(availabilityText) {
   const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -167,7 +186,7 @@ function renderPlayers(list) {
 
 async function initSearch() {
   allPlayers = await fetchPlayers();
-  console.log("Sanitized Player Data:", allPlayers[0]);
+  console.log("Processed Players:", allPlayers);
   
   const searchInput = document.getElementById("searchInput");
   searchInput.addEventListener("input", e => {
