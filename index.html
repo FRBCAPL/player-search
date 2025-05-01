@@ -74,38 +74,6 @@ const contactSheetName = "Contact Info";
 
 let allPlayers = [];
 
-async function verifyPin() {
-  const pin = document.getElementById("pinInput").value.trim();
-  if (!pin) {
-    document.getElementById("pinMessage").innerText = "Please enter a PIN.";
-    return;
-  }
-  document.getElementById("pinMessage").innerText = "Checking PIN...";
-
-  try {
-    const url = `https://docs.google.com/spreadsheets/d/${sheetID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(pinSheetName)}`;
-    const response = await fetch(url);
-    const text = await response.text();
-    const json = JSON.parse(text.substr(47).slice(0, -2));
-    const rows = json.table.rows;
-    const pinExists = rows.some(row => {
-      const cell = row.c[11]; // column L (index 11)
-      return cell && cell.v && cell.v.toString() === pin;
-    });
-
-    if (pinExists) {
-      document.getElementById("pinSection").style.display = "none";
-      document.getElementById("searchSection").style.display = "block";
-      initSearch();
-    } else {
-      document.getElementById("pinMessage").innerText = "Invalid PIN. Please try again.";
-    }
-  } catch (error) {
-    console.error("Error:", error);
-    document.getElementById("pinMessage").innerText = "Error verifying PIN. Please try again later.";
-  }
-}
-
 async function fetchSheetData(sheetName) {
   const url = `https://docs.google.com/spreadsheets/d/${sheetID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheetName)}`;
   const response = await fetch(url);
@@ -121,7 +89,7 @@ async function fetchPlayers() {
       fetchSheetData(contactSheetName)
     ]);
 
-    // Build contact map (case-insensitive)
+    // Build contact map
     const contactMap = {};
     contactRows.forEach(row => {
       const name = row.c[0]?.v?.toString().trim().toLowerCase() || "";
@@ -131,19 +99,19 @@ async function fetchPlayers() {
       contactMap[name] = { phone, email, facebook };
     });
 
-    // Map each day explicitly - CRITICAL UPDATE
+    // Map each day explicitly
     return playerRows.map(row => ({
       name: row.c[0]?.v?.toString().trim() || "",
       contact: contactMap[row.c[0]?.v?.toString().trim().toLowerCase()] || {},
       availability: {
-        Mon: row.c[1]?.v?.toString().trim() || "", // Column B
-        Tue: row.c[2]?.v?.toString().trim() || "", // Column C
-        Wed: row.c[3]?.v?.toString().trim() || "", // Column D
-        Thu: row.c[4]?.v?.toString().trim() || "", // Column E
-        Fri: row.c[5]?.v?.toString().trim() || "", // Column F
-        Sat: row.c[6]?.v?.toString().trim() || ""  // Column G
+        Mon: row.c[1]?.v?.toString().trim() || "",
+        Tue: row.c[2]?.v?.toString().trim() || "",
+        Wed: row.c[3]?.v?.toString().trim() || "",
+        Thu: row.c[4]?.v?.toString().trim() || "",
+        Fri: row.c[5]?.v?.toString().trim() || "",
+        Sat: row.c[6]?.v?.toString().trim() || ""
       },
-      location: row.c[7]?.v?.toString().trim() || "No preferred location" // Column H
+      location: row.c[7]?.v?.toString().trim() || "No preferred location"
     }));
   } catch (error) {
     console.error("Error:", error);
@@ -194,5 +162,6 @@ async function initSearch() {
   });
 }
 </script>
+
 </body>
 </html>
