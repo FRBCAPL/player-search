@@ -152,6 +152,13 @@ async function fetchPlayers() {
     }));
   } catch (error) {
     console.error("Error:", error);
+    console.log("Sample Player Data:", {
+  name: allPlayers[0].name,
+  contact: allPlayers[0].contact,
+  availability: allPlayers[0].availability,
+  location: allPlayers[0].location
+});
+
     return [];
   }
 }
