@@ -121,6 +121,10 @@ async function fetchPlayers() {
       fetchSheetData(contactSheetName)
     ]);
 
+    // Debug: Verify data structure
+    console.log("First Contact Row:", contactRows[0]?.c?.map(c => c?.v));
+    console.log("First Player Row:", playerRows[0]?.c?.map(c => c?.v));
+
     // Build contact map (case-insensitive)
     const contactMap = {};
     contactRows.forEach(row => {
@@ -176,7 +180,7 @@ function renderPlayers(list) {
 
 async function initSearch() {
   allPlayers = await fetchPlayers();
-  console.log("First Player Data:", allPlayers[0]); // Debug line
+  console.log("First Player Data:", allPlayers[0]);
   
   const searchInput = document.getElementById("searchInput");
   searchInput.addEventListener("input", e => {
