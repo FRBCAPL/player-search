@@ -121,7 +121,7 @@ async function fetchPlayers() {
       fetchSheetData(contactSheetName)
     ]);
 
-    // Build contact map
+    // Build contact map (case-insensitive)
     const contactMap = {};
     contactRows.forEach(row => {
       const name = row.c[0]?.v?.toString().trim().toLowerCase() || "";
@@ -150,6 +150,7 @@ async function fetchPlayers() {
     return [];
   }
 }
+
 
 
 function renderPlayers(list) {
