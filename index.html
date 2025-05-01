@@ -85,7 +85,10 @@ async function fetchPlayers() {
       fetchSheetData(contactSheetName)
     ]);
 
-    // Build contact map from Contact Info tab
+    // DEBUG: Verify contact data structure
+    console.log("Contact Row Example:", contactRows[0]?.c?.map(c => c?.v));
+
+    // Build contact map with error-proof formatting
     const contactMap = {};
     contactRows.forEach(row => {
       const name = row.c[0]?.v?.toString().trim().toLowerCase() || "";
@@ -96,18 +99,26 @@ async function fetchPlayers() {
       };
     });
 
-    // Process BCAPL Availability tab
-    return playerRows.map(row => ({
-      name: row.c[0]?.v?.toString().trim() || "",
-      contact: contactMap[row.c[0]?.v?.toString().trim().toLowerCase()] || {},
-      availability: parseAvailability(row.c[7]?.v?.toString() || ""), // Column H
-      location: row.c[8]?.v?.toString().trim() || "No preferred location" // Column I
-    }));
+    // Process player data with contact matching
+    return playerRows.map(row => {
+      const name = row.c[0]?.v?.toString().trim() || "";
+      return {
+        name,
+        contact: contactMap[name.toLowerCase()] || {
+          phone: "Not found",
+          email: "Not found",
+          facebook: "Not found"
+        },
+        availability: parseAvailability(row.c[7]?.v?.toString() || ""),
+        location: row.c[8]?.v?.toString().trim() || "No preferred location"
+      };
+    });
   } catch (error) {
     console.error("Error:", error);
     return [];
   }
 }
+
 
 function parseAvailability(availabilityText) {
   const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
