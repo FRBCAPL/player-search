@@ -36,7 +36,7 @@
 <script>
 const sheetID = "1tvMgMHsRwQxsR6lMNlSnztmwpK7fhZeNEyqjTqmRFRc";
 const pinSheetName = "BCAPL SIGNUP";
-const playerSheetName = "BCAPL Availability";
+const playerSheetName = "BCAPL Availability"; // CRITICAL - MUST MATCH YOUR SHEET
 const contactSheetName = "Contact Info";
 
 let allPlayers = [];
@@ -52,8 +52,8 @@ async function verifyPin() {
   try {
     const rows = await fetchSheetData(pinSheetName);
     const pinExists = rows.some(row => {
-      const pinCol = row.c[11]; // Column L (index 11)
-      return pinCol && pinCol.v && pinCol.v.toString() === pin;
+      const pinCol = row.c[11];
+      return pinCol?.v?.toString() === pin;
     });
 
     if (pinExists) {
@@ -61,11 +61,11 @@ async function verifyPin() {
       document.getElementById("searchSection").style.display = "block";
       initSearch();
     } else {
-      document.getElementById("pinMessage").innerText = "Invalid PIN. Please try again.";
+      document.getElementById("pinMessage").innerText = "Invalid PIN.";
     }
   } catch (error) {
-    console.error("Error:", error);
-    document.getElementById("pinMessage").innerText = "Error verifying PIN. Please try again later.";
+    console.error("PIN Error:", error);
+    document.getElementById("pinMessage").innerText = "Error verifying PIN.";
   }
 }
 
@@ -79,64 +79,58 @@ async function fetchSheetData(sheetName) {
 
 async function fetchPlayers() {
   try {
+    console.log("Fetching from:", playerSheetName); // VERIFY SHEET NAME
+    
     const [playerRows, contactRows] = await Promise.all([
-      fetchSheetData(playerSheetName), // ONLY USES AVAILABILITY SHEET
+      fetchSheetData(playerSheetName), // MUST BE "BCAPL Availability"
       fetchSheetData(contactSheetName)
     ]);
 
-    // Build contact map with strict name matching
+    console.log("Player Rows:", playerRows.length); // VERIFY COUNT
+    
+    // Build contact map
     const contactMap = {};
     contactRows.forEach(row => {
-      const originalName = (row.c[0]?.v?.toString() || "")
-        .trim()
-        .replace(/\s+/g, ' ')
-        .replace(/[\u200B-\u200D\uFEFF]/g, '');
-      
+      const originalName = (row.c[0]?.v?.toString() || "").trim();
       if (!originalName) return;
       
-      const normalizedName = originalName.toLowerCase();
-      contactMap[normalizedName] = {
+      contactMap[originalName.toLowerCase()] = {
         phone: row.c[1]?.v?.toString().replace('Text or Call: ', '') || "Not provided",
         email: row.c[2]?.v?.toString().replace('Email: ', '') || "Not provided",
         facebook: row.c[3]?.v?.toString() || "Not provided"
       };
     });
 
-    // Process players with proper capitalization
+    // Process players from AVAILABILITY sheet
     const processedPlayers = playerRows.map(row => {
-      const rawName = (row.c[0]?.v?.toString() || "")
-        .trim()
-        .replace(/\s+/g, ' ')
-        .replace(/[\u200B-\u200D\uFEFF]/g, '');
-      
-      const normalizedName = rawName.toLowerCase();
+      const fullName = (row.c[0]?.v?.toString() || "").trim();
       
       return {
-        name: toProperCase(rawName), // FORCE PROPER CASE
-        contact: contactMap[normalizedName] || {
+        name: toProperCase(fullName),
+        contact: contactMap[fullName.toLowerCase()] || {
           phone: "Not found",
           email: "Not found",
           facebook: "Not found"
         },
         availability: parseAvailability(row.c[7]?.v?.toString() || ""),
-        location: row.c[8]?.v?.toString().trim() || "No preferred location"
+        location: row.c[8]?.v?.toString().trim() || "No location"
       };
-    }).filter(p => p.name); // Remove empty names
+    }).filter(p => p.name);
 
-    console.log("Loaded Players:", processedPlayers);
+    console.log("Final Players:", processedPlayers);
     return processedPlayers;
   } catch (error) {
-    console.error("Error:", error);
+    console.error("Fetch Error:", error);
     return [];
   }
 }
 
-function parseAvailability(availabilityText) {
+function parseAvailability(text) {
   const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const result = {};
   days.forEach(day => result[day] = "❌ Unavailable");
 
-  availabilityText.split("Day:").forEach(dayBlock => {
+  text.split("Day:").forEach(dayBlock => {
     if (!dayBlock.trim()) return;
     
     const dayMatch = dayBlock.match(/Monday|Tuesday|Wednesday|Thursday|Friday|Saturday/i);
@@ -146,7 +140,7 @@ function parseAvailability(availabilityText) {
     if (dayMatch && fromMatch && toMatch) {
       const shortDay = dayMatch[0].substring(0, 3);
       const timeSlot = `${fromMatch[1].trim()} - ${toMatch[1].trim()}`;
-      result[shortDay] = result[shortDay] === "❌ Unavailable" 
+      result[shortDay] = result[shortDay].includes("❌") 
         ? timeSlot 
         : `${result[shortDay]}<br>${timeSlot}`;
     }
@@ -155,20 +149,20 @@ function parseAvailability(availabilityText) {
   return result;
 }
 
-function renderPlayers(list) {
+function renderPlayers(players) {
   const container = document.getElementById("results");
-  container.innerHTML = list.length ? list.map(player => `
+  container.innerHTML = players.length ? players.map(p => `
     <div class="player">
-      <h3>${player.name}</h3>
-      <p>📞 Phone: ${player.contact.phone}</p>
-      <p>📧 Email: ${player.contact.email}</p>
-      <p>🔵 Facebook: ${player.contact.facebook}</p>
-      <p>📍 Location: ${player.location.split('\n').map(loc => loc.trim()).join('<br>')}</p>
+      <h3>${p.name}</h3>
+      <p>📞 ${p.contact.phone}</p>
+      <p>📧 ${p.contact.email}</p>
+      <p>🔵 ${p.contact.facebook}</p>
+      <p>📍 ${p.location.replace(/\n/g, "<br>")}</p>
       <div class="availability-grid">
         ${["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(day => `
           <div class="availability-day">
             <strong>${day}</strong>
-            <div class="available-slot">${player.availability[day]}</div>
+            <div class="available-slot">${p.availability[day]}</div>
           </div>
         `).join('')}
       </div>
@@ -178,14 +172,13 @@ function renderPlayers(list) {
 
 async function initSearch() {
   allPlayers = await fetchPlayers();
-  console.log("Loaded Players:", allPlayers);
+  console.log("All Players:", allPlayers);
   
-  const searchInput = document.getElementById("searchInput");
-  searchInput.addEventListener("input", e => {
+  document.getElementById("searchInput").addEventListener("input", e => {
     const term = e.target.value.toLowerCase();
     const filtered = allPlayers.filter(p => 
       p.name.toLowerCase().includes(term) || 
-      Object.values(p.availability).some(time => time.toLowerCase().includes(term)) ||
+      Object.values(p.availability).some(v => v.toLowerCase().includes(term)) ||
       p.location.toLowerCase().includes(term)
     );
     renderPlayers(filtered);
@@ -202,5 +195,3 @@ function toProperCase(name) {
     .join(' ');
 }
 </script>
-</body>
-</html>
