@@ -49,7 +49,7 @@
   };
 
   const AVAILABILITY_COLS = {
-    NAME: 0,
+    NAME: 0,    // CONFIRM THIS IS CORRECT COLUMN
     LOCATION: 8,
     AVAILABILITY: 7
   };
@@ -67,7 +67,7 @@
     try {
       const rows = await fetchSheetData(pinSheetName);
       const pinExists = rows.some(row => {
-        const pinCol = row.c[11];
+        const pinCol = row.c[11]; // Column L (index 11)
         return pinCol && pinCol.v && pinCol.v.toString() === pin;
       });
 
@@ -99,11 +99,12 @@
         fetchSheetData(contactSheetName)
       ]);
 
-      // DEBUG: Show raw sheet data
-      console.log("First Contact Row:", contactRows[0]?.c?.map(c => c?.v));
-      console.log("First Player Row:", playerRows[0]?.c?.map(c => c?.v));
+      // DEBUG: Verify name column data
+      console.log("First 3 Availability Names:", 
+        playerRows.slice(0, 3).map(row => row.c[AVAILABILITY_COLS.NAME]?.v)
+      );
 
-      // Build contact map with strict cleaning
+      // Build contact map
       const contactMap = {};
       contactRows.forEach(row => {
         const rawName = row.c[CONTACT_COLS.NAME]?.v?.toString().trim() || "";
@@ -123,19 +124,20 @@
         };
       });
 
-      // DEBUG: Show sample contact
-      console.log("Contact Map Sample:", 
-        Object.entries(contactMap).slice(0, 3)
-      );
-
-      // Process players with strict matching
-      const processed = playerRows
+      // Process players with enhanced debugging
+      return playerRows
         .map(row => {
           const rawName = row.c[AVAILABILITY_COLS.NAME]?.v?.toString().trim() || "";
           const normalizedName = rawName.toLowerCase().replace(/\s+/g, ' ');
 
+          // DEBUG: Track name matching
+          if (rawName.toLowerCase().includes("mark")) {
+            console.log(`Matching "${rawName}" to contacts...`, 
+              contactMap[normalizedName] ? "FOUND" : "MISSING");
+          }
+
           return {
-            name: rawName,
+            name: rawName, // Preserve original capitalization
             contact: contactMap[normalizedName] || {
               phone: "Not found",
               email: "Not found",
@@ -146,12 +148,6 @@
           };
         })
         .filter(player => player.name);
-
-      // DEBUG: Show name matching
-      const testName = "mark test 5";
-      console.log(`Contact for "${testName}":`, contactMap[testName.toLowerCase()] || "NOT FOUND");
-      
-      return processed;
     } catch (error) {
       console.error("Error:", error);
       return [];
