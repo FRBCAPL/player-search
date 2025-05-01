@@ -121,7 +121,7 @@ async function fetchPlayers() {
       fetchSheetData(contactSheetName)
     ]);
 
-    // Build contact map
+    // Build contact map (case-insensitive)
     const contactMap = {};
     contactRows.forEach(row => {
       const name = row.c[0]?.v?.toString().trim().toLowerCase() || "";
@@ -131,7 +131,7 @@ async function fetchPlayers() {
       contactMap[name] = { phone, email, facebook };
     });
 
-    // Map each day explicitly
+    // Correct column mapping for availability sheet
     return playerRows.map(row => ({
       name: row.c[0]?.v?.toString().trim() || "",
       contact: contactMap[row.c[0]?.v?.toString().trim().toLowerCase()] || {},
@@ -176,7 +176,7 @@ function renderPlayers(list) {
 
 async function initSearch() {
   allPlayers = await fetchPlayers();
-  console.log("First Player Data:", allPlayers[0]); // Debugging line
+  console.log("First Player Data:", allPlayers[0]);
   
   const searchInput = document.getElementById("searchInput");
   searchInput.addEventListener("input", e => {
@@ -194,5 +194,3 @@ async function initSearch() {
   });
 }
 </script>
-</body>
-</html>
