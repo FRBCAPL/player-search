@@ -79,35 +79,45 @@ async function fetchSheetData(sheetName) {
 
 async function fetchPlayers() {
   try {
-    console.log("Fetching from:", playerSheetName); // VERIFY SHEET NAME
+    console.log("Fetching from:", playerSheetName);
     
     const [playerRows, contactRows] = await Promise.all([
-      fetchSheetData(playerSheetName), // MUST BE "BCAPL Availability"
+      fetchSheetData(playerSheetName),
       fetchSheetData(contactSheetName)
     ]);
 
-    console.log("Player Rows:", playerRows.length); // VERIFY COUNT
-    
-    // Build contact map
+    // DEBUG: Log raw names from Availability sheet
+    console.log("Raw Availability Names:", 
+      playerRows.slice(0,5).map(r => r.c[0]?.v?.toString()));
+
+    // Build contact map with STRICT matching
     const contactMap = {};
     contactRows.forEach(row => {
-      const originalName = (row.c[0]?.v?.toString() || "").trim();
-      if (!originalName) return;
+      const rawName = (row.c[0]?.v?.toString() || "")
+        .trim()
+        .replace(/\s+/g, ' ');
+      if (!rawName) return;
       
-      contactMap[originalName.toLowerCase()] = {
+      contactMap[rawName.toLowerCase()] = {
         phone: row.c[1]?.v?.toString().replace('Text or Call: ', '') || "Not provided",
         email: row.c[2]?.v?.toString().replace('Email: ', '') || "Not provided",
         facebook: row.c[3]?.v?.toString() || "Not provided"
       };
     });
 
-    // Process players from AVAILABILITY sheet
+    // Process players with PROPER name handling
     const processedPlayers = playerRows.map(row => {
-      const fullName = (row.c[0]?.v?.toString() || "").trim();
-      
+      const rawName = (row.c[0]?.v?.toString() || "")
+        .trim()
+        .replace(/\s+/g, ' ')
+        .replace(/[\u200B-\u200D\uFEFF]/g, ''); // Remove zero-width spaces
+
+      // DEBUG: Log name processing
+      if(!rawName) console.warn("Empty name in row:", row);
+
       return {
-        name: toProperCase(fullName),
-        contact: contactMap[fullName.toLowerCase()] || {
+        name: rawName, // PRESERVE ORIGINAL NAME
+        contact: contactMap[rawName.toLowerCase()] || {
           phone: "Not found",
           email: "Not found",
           facebook: "Not found"
@@ -115,8 +125,9 @@ async function fetchPlayers() {
         availability: parseAvailability(row.c[7]?.v?.toString() || ""),
         location: row.c[8]?.v?.toString().trim() || "No location"
       };
-    }).filter(p => p.name);
+    }).filter(p => p.name); // Remove empty names
 
+    console.log("Contact Map Keys:", Object.keys(contactMap));
     console.log("Final Players:", processedPlayers);
     return processedPlayers;
   } catch (error) {
@@ -124,6 +135,7 @@ async function fetchPlayers() {
     return [];
   }
 }
+
 
 function parseAvailability(text) {
   const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
