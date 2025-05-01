@@ -34,7 +34,7 @@
 </div>
 
 <script>
-(function() { // IIFE wrapper to prevent global scope issues
+(function() {
   const sheetID = "1tvMgMHsRwQxsR6lMNlSnztmwpK7fhZeNEyqjTqmRFRc";
   const pinSheetName = "BCAPL SIGNUP";
   const playerSheetName = "BCAPL Availability";
@@ -42,10 +42,10 @@
 
   // Column indexes (0-based)
   const CONTACT_COLS = {
-    NAME: 0,
-    PHONE: 1,
-    EMAIL: 2,
-    FACEBOOK: 3
+    NAME: 0,    // Column A
+    PHONE: 1,   // Column B
+    EMAIL: 2,   // Column C
+    FACEBOOK: 3 // Column D
   };
 
   const AVAILABILITY_COLS = {
@@ -67,7 +67,7 @@
     try {
       const rows = await fetchSheetData(pinSheetName);
       const pinExists = rows.some(row => {
-        const pinCol = row.c[11];
+        const pinCol = row.c[11]; // Column L (index 11)
         return pinCol && pinCol.v && pinCol.v.toString() === pin;
       });
 
@@ -204,7 +204,6 @@
     });
   }
 
-  // Expose only necessary functions to global scope
   window.verifyPin = verifyPin;
 })();
 </script>
