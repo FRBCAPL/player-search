@@ -126,7 +126,7 @@ async function fetchPlayers() {
       fetchSheetData(contactSheetName)
     ]);
 
-    // Create contact map (case-insensitive)
+    // Build contact map (case-insensitive)
     const contactMap = {};
     contactRows.forEach(row => {
       const name = row.c[0]?.v?.toString().trim().toLowerCase() || "";
@@ -136,7 +136,7 @@ async function fetchPlayers() {
       contactMap[name] = { phone, email, facebook };
     });
 
-    // Include availability (B-G) and preferred location (H)
+    // Map each day explicitly
     return playerRows.map(row => ({
       name: row.c[0]?.v?.toString().trim() || "",
       contact: contactMap[row.c[0]?.v?.toString().trim().toLowerCase()] || {},
@@ -152,16 +152,10 @@ async function fetchPlayers() {
     }));
   } catch (error) {
     console.error("Error:", error);
-    console.log("Sample Player Data:", {
-  name: allPlayers[0].name,
-  contact: allPlayers[0].contact,
-  availability: allPlayers[0].availability,
-  location: allPlayers[0].location
-});
-
     return [];
   }
 }
+
 
 // Render players with availability and contact info
 function renderPlayers(list) {
@@ -173,7 +167,6 @@ function renderPlayers(list) {
       <p>📧 Email: ${player.contact.email || "Not provided"}</p>
       <p>🔵 Facebook: ${player.contact.facebook || "Not provided"}</p>
       <p>📍 Location: ${player.location}</p>
-      
       <div class="availability-grid">
         ${["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(day => `
           <div class="availability-day">
@@ -187,6 +180,7 @@ function renderPlayers(list) {
     </div>
   `).join("") : "<p>No players found</p>";
 }
+
 
 // Initialize search with dynamic filtering
 async function initSearch() {
