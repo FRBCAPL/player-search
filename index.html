@@ -79,55 +79,48 @@ async function fetchSheetData(sheetName) {
 
 async function fetchPlayers() {
   try {
-    console.log("ACTIVELY USING SHEET:", playerSheetName); // Should log "BCAPL Availability"
-    
     const [playerRows, contactRows] = await Promise.all([
-      fetchSheetData(playerSheetName), // MUST BE AVAILABILITY SHEET
+      fetchSheetData(playerSheetName),
       fetchSheetData(contactSheetName)
     ]);
-
-    // Debug: Verify raw names
-    console.log("RAW AVAILABILITY NAMES:", 
-      playerRows.slice(0,5).map(r => r.c[0]?.v?.toString().trim()));
 
     // Build contact map
     const contactMap = {};
     contactRows.forEach(row => {
-      const rawName = (row.c[0]?.v?.toString() || "")
-        .trim()
-        .replace(/\s+/g, ' ');
-      if (!rawName) return;
-      contactMap[rawName.toLowerCase()] = {
-        phone: row.c[1]?.v?.toString().replace('Text or Call: ', '') || "Not provided",
-        email: row.c[2]?.v?.toString().replace('Email: ', '') || "Not provided",
-        facebook: row.c[3]?.v?.toString() || "Not provided"
-      };
+      const rawName = (row.c[0]?.v?.toString() || "").trim();
+      if (rawName) {
+        contactMap[rawName.toLowerCase()] = {
+          phone: row.c[1]?.v?.toString().replace('Text or Call: ', '') || "Not provided",
+          email: row.c[2]?.v?.toString().replace('Email: ', '') || "Not provided",
+          facebook: row.c[3]?.v?.toString() || "Not provided"
+        };
+      }
     });
 
-    // Process players
+    // Process players with CORRECT COLUMN MAPPING
     const processedPlayers = playerRows.map(row => {
-      const rawName = (row.c[0]?.v?.toString() || "")
-        .trim()
-        .replace(/\s+/g, ' ');
-
-      if (!rawName) {
-        console.warn("Empty name in row:", row);
-        return null;
-      }
+      const rawName = (row.c[0]?.v?.toString() || "").trim();
+      if (!rawName) return null;
 
       return {
-        name: rawName, // PRESERVE ORIGINAL CASE
+        name: rawName,
         contact: contactMap[rawName.toLowerCase()] || {
           phone: "Not found",
           email: "Not found",
           facebook: "Not found"
         },
-        availability: parseAvailability(row.c[7]?.v?.toString() || ""),
-        location: (row.c[8]?.v?.toString() || "").trim() || "No location"
+        availability: {
+          Mon: row.c[1]?.v?.toString().trim() || "❌ Unavailable",
+          Tue: row.c[2]?.v?.toString().trim() || "❌ Unavailable",
+          Wed: row.c[3]?.v?.toString().trim() || "❌ Unavailable",
+          Thu: row.c[4]?.v?.toString().trim() || "❌ Unavailable",
+          Fri: row.c[5]?.v?.toString().trim() || "❌ Unavailable",
+          Sat: row.c[6]?.v?.toString().trim() || "❌ Unavailable"
+        },
+        location: (row.c[7]?.v?.toString() || "").trim()
       };
     }).filter(Boolean);
 
-    console.log("FINAL PLAYERS:", processedPlayers);
     return processedPlayers;
   } catch (error) {
     console.error("Error:", error);
@@ -137,30 +130,7 @@ async function fetchPlayers() {
 
 
 
-function parseAvailability(text) {
-  const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  const result = {};
-  days.forEach(day => result[day] = "❌ Unavailable");
 
-  // Add this line to clean the text
-  text = (text || "").replace(/\n/g, " ").replace(/\s+/g, " ");
-
-  text.split("Day:").slice(1).forEach(dayBlock => {  // slice(1) removes empty first element
-    const dayMatch = dayBlock.match(/Monday|Tuesday|Wednesday|Thursday|Friday|Saturday/i);
-    const fromMatch = dayBlock.match(/From:\s*([0-9apm:]+)/i);
-    const toMatch = dayBlock.match(/Until:\s*([0-9apm: ]+)/i);
-    
-    if (dayMatch && fromMatch && toMatch) {
-      const shortDay = dayMatch[0].substring(0, 3);
-      const timeSlot = `${fromMatch[1].trim()} - ${toMatch[1].trim()}`;
-      result[shortDay] = result[shortDay].includes("❌") 
-        ? timeSlot 
-        : `${result[shortDay]}<br>${timeSlot}`;
-    }
-  });
-
-  return result;
-}
 
 
 function renderPlayers(players) {
