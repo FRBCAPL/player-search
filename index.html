@@ -138,10 +138,7 @@ async function fetchPlayers() {
 
 
  // Process players from AVAILABILITY sheet
-    const processedPlayers = playerRows.map(row => {
-      const fullName = (row.c[0]?.v?.toString() || "").trim();
-      
-      return {
+    {
         name: toProperCase(fullName),
         contact: contactMap[fullName.toLowerCase()] || {
           phone: "Not found",
