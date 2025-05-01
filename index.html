@@ -84,26 +84,35 @@ async function fetchPlayers() {
       fetchSheetData(contactSheetName)
     ]);
 
-    // Build contact map with original name preservation
+    // Build contact map
     const contactMap = {};
     contactRows.forEach(row => {
-      const originalName = row.c[0]?.v?.toString().trim() || "";
+      const originalName = (row.c[0]?.v?.toString() || "")
+        .trim()
+        .replace(/\s+/g, ' ')
+        .replace(/[\u200B-\u200D\uFEFF]/g, '');
+      
+      if (!originalName) return;
+      
       const normalizedName = originalName.toLowerCase();
       contactMap[normalizedName] = {
-        originalName: originalName, // Preserve original casing
         phone: row.c[1]?.v?.toString().replace('Text or Call: ', '') || "Not provided",
         email: row.c[2]?.v?.toString().replace('Email: ', '') || "Not provided",
         facebook: row.c[3]?.v?.toString() || "Not provided"
       };
     });
 
-    // Process players with strict name preservation
+    // Process players with strict name handling
     const processedPlayers = playerRows.map(row => {
-      const rawName = row.c[0]?.v?.toString().trim() || "";
+      const rawName = (row.c[0]?.v?.toString() || "")
+        .trim()
+        .replace(/\s+/g, ' ')
+        .replace(/[\u200B-\u200D\uFEFF]/g, '');
+      
       const normalizedName = rawName.toLowerCase();
       
       return {
-        name: rawName, // Always use original name from Availability sheet
+        name: rawName, // Sanitized original name
         contact: contactMap[normalizedName] || {
           phone: "Not found",
           email: "Not found",
@@ -112,15 +121,16 @@ async function fetchPlayers() {
         availability: parseAvailability(row.c[7]?.v?.toString() || ""),
         location: row.c[8]?.v?.toString().trim() || "No preferred location"
       };
-    }).filter(p => p.name); // Remove empty names
+    }).filter(p => p.name);
 
-    console.log("Name Debug:", processedPlayers.slice(0,3).map(p => p.name));
+    console.log("Sanitized Names:", processedPlayers.slice(0,3).map(p => p.name));
     return processedPlayers;
   } catch (error) {
     console.error("Error:", error);
     return [];
   }
 }
+
 
 function parseAvailability(availabilityText) {
   const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
