@@ -1,23 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Player Search Portal</title>
-  <style>
-    body { font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: auto; }
-    #searchSection { display: none; }
-    input, button { padding: 12px; margin: 10px 0; width: 100%; box-sizing: border-box; }
-    button { background: #1976d2; color: white; border: none; cursor: pointer; border-radius: 4px; }
-    #results { margin-top: 20px; }
-    #pinSection { margin-bottom: 30px; }
-    .player { background: #f9f9f9; border-radius: 8px; padding: 15px; margin: 10px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-    .player h3 { margin: 0 0 8px 0; color: #1976d2; }
-    .player p { margin: 5px 0; }
-    .availability-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; margin-top: 10px; }
-    .availability-day { padding: 8px; border-radius: 4px; background: #f0f7ff; border: 1px solid #d0e3ff; }
-    .available-slot { margin-top: 5px; padding: 4px; background: #e6f7d9; border-radius: 3px; font-size: 0.9em; }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Player Search Portal</title>
+<style>
+  body { font-family: Arial, sans-serif; max-width: 800px; margin: 20px auto; padding: 0 10px; }
+  #searchSection { display: none; }
+  input, button { width: 100%; padding: 12px; margin: 10px 0; box-sizing: border-box; }
+  button { background: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer; }
+  #results { margin-top: 20px; }
+  .player { background: #f9f9f9; border-radius: 8px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+  .player h3 { margin: 0 0 8px; color: #1976d2; }
+  .player p { margin: 4px 0; }
+  .availability-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; margin-top: 10px; }
+  .availability-day { background: #f0f7ff; border: 1px solid #cce0ff; border-radius: 4px; padding: 6px; }
+  .available-slot { font-size: 0.9em; margin-top: 4px; background: #e6f7d9; border-radius: 3px; padding: 4px; }
+</style>
 </head>
 <body>
 
@@ -35,13 +34,13 @@
 </div>
 
 <script>
-(function() {
+(() => {
   const sheetID = "1tvMgMHsRwQxsR6lMNlSnztmwpK7fhZeNEyqjTqmRFRc";
   const pinSheetName = "BCAPL SIGNUP";
   const playerSheetName = "BCAPL Availability";
   const contactSheetName = "Contact Info";
 
-  // Column indexes (0-based)
+  // COLUMN INDEXES (0-based)
   const CONTACT_COLS = {
     NAME: 0,    // Column A
     PHONE: 1,   // Column B
@@ -50,14 +49,14 @@
   };
 
   const AVAILABILITY_COLS = {
-    NAME: 0,    // Column A
-    MONDAY: 1,  // Column B
-    TUESDAY: 2, // Column C
-    WEDNESDAY: 3, // Column D
-    THURSDAY: 4,  // Column E
-    FRIDAY: 5,    // Column F
-    SATURDAY: 6,  // Column G
-    LOCATION: 7   // Column H
+    NAME: 0,    // Column A - Player Name
+    MONDAY: 1,  // Column B - Monday Availability
+    TUESDAY: 2, // Column C - Tuesday Availability
+    WEDNESDAY: 3, // Column D - Wednesday Availability
+    THURSDAY: 4,  // Column E - Thursday Availability
+    FRIDAY: 5,    // Column F - Friday Availability
+    SATURDAY: 6,  // Column G - Saturday Availability
+    LOCATION: 7   // Column H - Location Preferences
   };
 
   let allPlayers = [];
@@ -84,8 +83,8 @@
       } else {
         document.getElementById("pinMessage").innerText = "Invalid PIN. Please try again.";
       }
-    } catch (error) {
-      console.error("Error:", error);
+    } catch (e) {
+      console.error(e);
       document.getElementById("pinMessage").innerText = "Error verifying PIN. Please try again later.";
     }
   }
@@ -94,7 +93,7 @@
     const url = `https://docs.google.com/spreadsheets/d/${sheetID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheetName)}`;
     const response = await fetch(url);
     const text = await response.text();
-    const json = JSON.parse(text.substr(47).slice(0, -2));
+    const json = JSON.parse(text.substring(47, text.length - 2));
     return json.table.rows;
   }
 
@@ -105,79 +104,57 @@
         fetchSheetData(contactSheetName)
       ]);
 
-      // Debug raw name data
-      console.log("First 3 Availability Names:", 
-        playerRows.slice(0, 3).map(row => row.c[AVAILABILITY_COLS.NAME]?.v));
-      console.log("First 3 Contact Names:", 
-        contactRows.slice(0, 3).map(row => row.c[CONTACT_COLS.NAME]?.v));
-
-      // Build contact map with exact name matching
+      // Build contact map
       const contactMap = {};
       contactRows.forEach(row => {
-        const rawName = row.c[CONTACT_COLS.NAME]?.v?.toString().trim() || "";
-        if (!rawName) return;
-
-        // Use exact lowercase match but preserve original name
-        contactMap[rawName.toLowerCase()] = {
-          rawName: rawName, // Preserve original formatting
-          phone: row.c[CONTACT_COLS.PHONE]?.v?.toString()
-            .replace('Text Only: ', '')
-            .trim() || "Not provided",
-          email: row.c[CONTACT_COLS.EMAIL]?.v?.toString()
-            .replace('Email: ', '')
-            .trim() || "Not provided",
-          facebook: row.c[CONTACT_COLS.FACEBOOK]?.v?.toString()
-            .trim() || "Not provided"
+        const name = row.c[CONTACT_COLS.NAME]?.v?.toString().trim() || "";
+        if (!name) return;
+        const key = name.toLowerCase();
+        contactMap[key] = {
+          phone: (row.c[CONTACT_COLS.PHONE]?.v?.toString() || "").replace("Text Only: ", "").trim() || "Not provided",
+          email: (row.c[CONTACT_COLS.EMAIL]?.v?.toString() || "").replace("Email: ", "").trim() || "Not provided",
+          facebook: (row.c[CONTACT_COLS.FACEBOOK]?.v?.toString() || "").trim() || "Not provided"
         };
       });
 
-      // Process players with strict name preservation
+      // Process players with strict column mapping
       return playerRows.map(row => {
         const rawName = row.c[AVAILABILITY_COLS.NAME]?.v?.toString().trim() || "";
-        const normalizedName = rawName.toLowerCase();
-
-        // Find exact match or closest partial match
-        let contact = contactMap[normalizedName];
-        if (!contact) {
-          const partialMatch = Object.keys(contactMap).find(key => 
-            normalizedName.includes(key) || key.includes(normalizedName)
-          );
-          contact = partialMatch ? contactMap[partialMatch] : null;
-        }
+        const key = rawName.toLowerCase();
 
         return {
-          name: rawName, // Always use availability sheet's original name
-          contact: contact || {
-            phone: "Not found",
-            email: "Not found",
-            facebook: "Not found"
-          },
+          name: rawName,
+          contact: contactMap[key] || { phone: "Not found", email: "Not found", facebook: "Not found" },
           availability: {
             Mon: row.c[AVAILABILITY_COLS.MONDAY]?.v?.toString().trim() || "❌ Unavailable",
             Tue: row.c[AVAILABILITY_COLS.TUESDAY]?.v?.toString().trim() || "❌ Unavailable",
             Wed: row.c[AVAILABILITY_COLS.WEDNESDAY]?.v?.toString().trim() || "❌ Unavailable",
             Thu: row.c[AVAILABILITY_COLS.THURSDAY]?.v?.toString().trim() || "❌ Unavailable",
             Fri: row.c[AVAILABILITY_COLS.FRIDAY]?.v?.toString().trim() || "❌ Unavailable",
-            Sat: row.c[AVAILABILITY_COLS.SATURDAY]?.v?.toString().trim() || "❌ Unavailable"
+            Sat: row.c[AVAILABILITY_COLS.SATURDAY]?.v?.toString().trim() || "❌ Unavailable",
           },
           location: row.c[AVAILABILITY_COLS.LOCATION]?.v?.toString().trim() || "No preferred location"
         };
-      }).filter(player => player.name);
-    } catch (error) {
-      console.error("Error:", error);
+      }).filter(p => p.name);
+    } catch (e) {
+      console.error("Error fetching players:", e);
       return [];
     }
   }
 
-  function renderPlayers(list) {
+  function renderPlayers(players) {
     const container = document.getElementById("results");
-    container.innerHTML = list.length ? list.map(player => `
+    if (!players.length) {
+      container.innerHTML = "<p>No players found</p>";
+      return;
+    }
+    container.innerHTML = players.map(player => `
       <div class="player">
         <h3>${player.name}</h3>
         <p>📞 Phone: ${player.contact.phone}</p>
         <p>📧 Email: ${player.contact.email}</p>
         <p>🔵 Facebook: ${player.contact.facebook}</p>
-        <p>📍 Location: ${player.location.split('\n').map(loc => loc.trim()).join('<br>')}</p>
+        <p>📍 Location: ${player.location}</p>
         <div class="availability-grid">
           ${Object.entries(player.availability).map(([day, time]) => `
             <div class="availability-day">
@@ -187,18 +164,17 @@
           `).join('')}
         </div>
       </div>
-    `).join("") : "<p>No players found</p>";
+    `).join("");
   }
 
   async function initSearch() {
     allPlayers = await fetchPlayers();
-    console.log("Processed Players:", allPlayers);
-    
+    console.log("Loaded players:", allPlayers);
     const searchInput = document.getElementById("searchInput");
     searchInput.addEventListener("input", e => {
       const term = e.target.value.toLowerCase();
-      const filtered = allPlayers.filter(p => 
-        p.name.toLowerCase().includes(term) || 
+      const filtered = allPlayers.filter(p =>
+        p.name.toLowerCase().includes(term) ||
         Object.values(p.availability).some(time => time.toLowerCase().includes(term)) ||
         p.location.toLowerCase().includes(term)
       );
@@ -209,5 +185,6 @@
   window.verifyPin = verifyPin;
 })();
 </script>
+
 </body>
 </html>
