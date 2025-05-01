@@ -34,201 +34,179 @@
 </div>
 
 <script>
-const sheetID = "1tvMgMHsRwQxsR6lMNlSnztmwpK7fhZeNEyqjTqmRFRc";
-const pinSheetName = "BCAPL SIGNUP";
-const playerSheetName = "BCAPL Availability";
-const contactSheetName = "Contact Info";
+(function() { // IIFE wrapper to prevent global scope issues
+  const sheetID = "1tvMgMHsRwQxsR6lMNlSnztmwpK7fhZeNEyqjTqmRFRc";
+  const pinSheetName = "BCAPL SIGNUP";
+  const playerSheetName = "BCAPL Availability";
+  const contactSheetName = "Contact Info";
 
-// Column indexes (0-based)
-const CONTACT_COLS = {
-  NAME: 0,
-  PHONE: 1,
-  EMAIL: 2,
-  FACEBOOK: 3
-};
+  // Column indexes (0-based)
+  const CONTACT_COLS = {
+    NAME: 0,
+    PHONE: 1,
+    EMAIL: 2,
+    FACEBOOK: 3
+  };
 
-const AVAILABILITY_COLS = {
-  NAME: 0,
-  LOCATION: 8,
-  AVAILABILITY: 7
-};
+  const AVAILABILITY_COLS = {
+    NAME: 0,
+    LOCATION: 8,
+    AVAILABILITY: 7
+  };
 
-let allPlayers = [];
+  let allPlayers = [];
 
-async function verifyPin() {
-  const pin = document.getElementById("pinInput").value.trim();
-  if (!pin) {
-    document.getElementById("pinMessage").innerText = "Please enter a PIN.";
-    return;
-  }
-  document.getElementById("pinMessage").innerText = "Checking PIN...";
-
-  try {
-    const rows = await fetchSheetData(pinSheetName);
-    const pinExists = rows.some(row => {
-      const pinCol = row.c[11];
-      return pinCol && pinCol.v && pinCol.v.toString() === pin;
-    });
-
-    if (pinExists) {
-      document.getElementById("pinSection").style.display = "none";
-      document.getElementById("searchSection").style.display = "block";
-      initSearch();
-    } else {
-      document.getElementById("pinMessage").innerText = "Invalid PIN. Please try again.";
+  async function verifyPin() {
+    const pin = document.getElementById("pinInput").value.trim();
+    if (!pin) {
+      document.getElementById("pinMessage").innerText = "Please enter a PIN.";
+      return;
     }
-  } catch (error) {
-    console.error("Error:", error);
-    document.getElementById("pinMessage").innerText = "Error verifying PIN. Please try again later.";
+    document.getElementById("pinMessage").innerText = "Checking PIN...";
+
+    try {
+      const rows = await fetchSheetData(pinSheetName);
+      const pinExists = rows.some(row => {
+        const pinCol = row.c[11];
+        return pinCol && pinCol.v && pinCol.v.toString() === pin;
+      });
+
+      if (pinExists) {
+        document.getElementById("pinSection").style.display = "none";
+        document.getElementById("searchSection").style.display = "block";
+        initSearch();
+      } else {
+        document.getElementById("pinMessage").innerText = "Invalid PIN. Please try again.";
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      document.getElementById("pinMessage").innerText = "Error verifying PIN. Please try again later.";
+    }
   }
-}
 
-async function fetchSheetData(sheetName) {
-  const url = `https://docs.google.com/spreadsheets/d/${sheetID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheetName)}`;
-  const response = await fetch(url);
-  const text = await response.text();
-  const json = JSON.parse(text.substr(47).slice(0, -2));
-  return json.table.rows;
-}
+  async function fetchSheetData(sheetName) {
+    const url = `https://docs.google.com/spreadsheets/d/${sheetID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheetName)}`;
+    const response = await fetch(url);
+    const text = await response.text();
+    const json = JSON.parse(text.substr(47).slice(0, -2));
+    return json.table.rows;
+  }
 
-async function fetchPlayers() {
-  try {
-    const [playerRows, contactRows] = await Promise.all([
-      fetchSheetData(playerSheetName),
-      fetchSheetData(contactSheetName)
-    ]);
+  async function fetchPlayers() {
+    try {
+      const [playerRows, contactRows] = await Promise.all([
+        fetchSheetData(playerSheetName),
+        fetchSheetData(contactSheetName)
+      ]);
 
-    // Enhanced contact mapping
-    const contactMap = {};
-    contactRows.forEach(row => {
-      const rawName = row.c[CONTACT_COLS.NAME]?.v?.toString().trim() || "";
-      const normalizedName = rawName.toLowerCase()
-        .replace(/\s+/g, ' ')  // Collapse multiple spaces
-        .replace(/[^\w\s]/g, ''); // Remove special characters
-        
-      if (!normalizedName) return;
+      // Build contact map with strict cleaning
+      const contactMap = {};
+      contactRows.forEach(row => {
+        const rawName = row.c[CONTACT_COLS.NAME]?.v?.toString().trim() || "";
+        const normalizedName = rawName.toLowerCase().replace(/\s+/g, ' ');
 
-      contactMap[normalizedName] = {
-        phone: row.c[CONTACT_COLS.PHONE]?.v?.toString()
-          .replace('Text or Call: ', '')
-          .trim() || "Not provided",
-        email: row.c[CONTACT_COLS.EMAIL]?.v?.toString()
-          .replace('Email: ', '')
-          .trim() || "Not provided",
-        facebook: row.c[CONTACT_COLS.FACEBOOK]?.v?.toString()
-          .trim() || "Not provided"
-      };
-    });
+        if (!normalizedName) return;
 
-    // Process players with strict filtering
-    return playerRows
-      .map(row => {
-        const rawName = row.c[AVAILABILITY_COLS.NAME]?.v?.toString().trim() || "";
-        const normalizedName = rawName.toLowerCase()
-          .replace(/\s+/g, ' ')
-          .replace(/[^\w\s]/g, '');
-
-        return {
-          name: rawName,
-          contact: contactMap[normalizedName] || {
-            phone: "Not found",
-            email: "Not found",
-            facebook: "Not found"
-          },
-          availability: parseAvailability(row.c[AVAILABILITY_COLS.AVAILABILITY]?.v?.toString() || ""),
-          location: row.c[AVAILABILITY_COLS.LOCATION]?.v?.toString().trim() || "No preferred location"
+        contactMap[normalizedName] = {
+          phone: row.c[CONTACT_COLS.PHONE]?.v?.toString()
+            .replace('Text or Call: ', '')
+            .trim() || "Not provided",
+          email: row.c[CONTACT_COLS.EMAIL]?.v?.toString()
+            .replace('Email: ', '')
+            .trim() || "Not provided",
+          facebook: row.c[CONTACT_COLS.FACEBOOK]?.v?.toString()
+            .trim() || "Not provided"
         };
-      })
-      .filter(player => player.name); // Remove empty names
-  } catch (error) {
-    console.error("Error:", error);
-    return [];
-  }
-}
+      });
 
+      // Process players with strict matching
+      return playerRows
+        .map(row => {
+          const rawName = row.c[AVAILABILITY_COLS.NAME]?.v?.toString().trim() || "";
+          const normalizedName = rawName.toLowerCase().replace(/\s+/g, ' ');
 
-    // Process players
-    return playerRows.map(row => {
-      const rawName = row.c[AVAILABILITY_COLS.NAME]?.v?.toString().trim() || "";
-      const normalizedName = rawName.toLowerCase().replace(/\s+/g, ' ');
-      
-      return {
-        name: rawName,
-        contact: contactMap[normalizedName] || {
-          phone: "Not found",
-          email: "Not found",
-          facebook: "Not found"
-        },
-        availability: parseAvailability(row.c[AVAILABILITY_COLS.AVAILABILITY]?.v?.toString() || ""),
-        location: row.c[AVAILABILITY_COLS.LOCATION]?.v?.toString().trim() || "No preferred location"
-      };
-    });
-  } catch (error) {
-    console.error("Error:", error);
-    return [];
-  }
-}
-
-function parseAvailability(availabilityText) {
-  const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  const result = {};
-  days.forEach(day => result[day] = "❌ Unavailable");
-
-  availabilityText.split("Day:").forEach(dayBlock => {
-    if (!dayBlock.trim()) return;
-    
-    const dayMatch = dayBlock.match(/Monday|Tuesday|Wednesday|Thursday|Friday|Saturday/i);
-    const fromMatch = dayBlock.match(/From: ([0-9a-z:]+)/i);
-    const toMatch = dayBlock.match(/Until: ([0-9a-z: ]+)/i);
-    
-    if (dayMatch && fromMatch && toMatch) {
-      const shortDay = dayMatch[0].substring(0, 3);
-      const timeSlot = `${fromMatch[1].trim()} - ${toMatch[1].trim()}`;
-      result[shortDay] = result[shortDay] === "❌ Unavailable" 
-        ? timeSlot 
-        : `${result[shortDay]}<br>${timeSlot}`;
+          return {
+            name: rawName,
+            contact: contactMap[normalizedName] || {
+              phone: "Not found",
+              email: "Not found",
+              facebook: "Not found"
+            },
+            availability: parseAvailability(row.c[AVAILABILITY_COLS.AVAILABILITY]?.v?.toString() || ""),
+            location: row.c[AVAILABILITY_COLS.LOCATION]?.v?.toString().trim() || "No preferred location"
+          };
+        })
+        .filter(player => player.name); // Remove empty names
+    } catch (error) {
+      console.error("Error:", error);
+      return [];
     }
-  });
+  }
 
-  return result;
-}
+  function parseAvailability(availabilityText) {
+    const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const result = {};
+    days.forEach(day => result[day] = "❌ Unavailable");
 
-function renderPlayers(list) {
-  const container = document.getElementById("results");
-  container.innerHTML = list.length ? list.map(player => `
-    <div class="player">
-      <h3>${player.name}</h3>
-      <p>📞 Phone: ${player.contact.phone}</p>
-      <p>📧 Email: ${player.contact.email}</p>
-      <p>🔵 Facebook: ${player.contact.facebook}</p>
-      <p>📍 Location: ${player.location.split('\n').map(loc => loc.trim()).join('<br>')}</p>
-      <div class="availability-grid">
-        ${["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(day => `
-          <div class="availability-day">
-            <strong>${day}</strong>
-            <div class="available-slot">${player.availability[day]}</div>
-          </div>
-        `).join('')}
+    availabilityText.split("Day:").forEach(dayBlock => {
+      if (!dayBlock.trim()) return;
+      
+      const dayMatch = dayBlock.match(/Monday|Tuesday|Wednesday|Thursday|Friday|Saturday/i);
+      const fromMatch = dayBlock.match(/From: ([0-9a-z:]+)/i);
+      const toMatch = dayBlock.match(/Until: ([0-9a-z: ]+)/i);
+      
+      if (dayMatch && fromMatch && toMatch) {
+        const shortDay = dayMatch[0].substring(0, 3);
+        const timeSlot = `${fromMatch[1].trim()} - ${toMatch[1].trim()}`;
+        result[shortDay] = result[shortDay] === "❌ Unavailable" 
+          ? timeSlot 
+          : `${result[shortDay]}<br>${timeSlot}`;
+      }
+    });
+
+    return result;
+  }
+
+  function renderPlayers(list) {
+    const container = document.getElementById("results");
+    container.innerHTML = list.length ? list.map(player => `
+      <div class="player">
+        <h3>${player.name}</h3>
+        <p>📞 Phone: ${player.contact.phone}</p>
+        <p>📧 Email: ${player.contact.email}</p>
+        <p>🔵 Facebook: ${player.contact.facebook}</p>
+        <p>📍 Location: ${player.location.split('\n').map(loc => loc.trim()).join('<br>')}</p>
+        <div class="availability-grid">
+          ${["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(day => `
+            <div class="availability-day">
+              <strong>${day}</strong>
+              <div class="available-slot">${player.availability[day]}</div>
+            </div>
+          `).join('')}
+        </div>
       </div>
-    </div>
-  `).join("") : "<p>No players found</p>";
-}
+    `).join("") : "<p>No players found</p>";
+  }
 
-async function initSearch() {
-  allPlayers = await fetchPlayers();
-  console.log("Loaded players:", allPlayers);
-  
-  const searchInput = document.getElementById("searchInput");
-  searchInput.addEventListener("input", e => {
-    const term = e.target.value.toLowerCase();
-    const filtered = allPlayers.filter(p => 
-      p.name.toLowerCase().includes(term) || 
-      Object.values(p.availability).some(time => time.toLowerCase().includes(term)) ||
-      p.location.toLowerCase().includes(term)
-    );
-    renderPlayers(filtered);
-  });
-}
+  async function initSearch() {
+    allPlayers = await fetchPlayers();
+    console.log("Processed Players:", allPlayers);
+    
+    const searchInput = document.getElementById("searchInput");
+    searchInput.addEventListener("input", e => {
+      const term = e.target.value.toLowerCase();
+      const filtered = allPlayers.filter(p => 
+        p.name.toLowerCase().includes(term) || 
+        Object.values(p.availability).some(time => time.toLowerCase().includes(term)) ||
+        p.location.toLowerCase().includes(term)
+      );
+      renderPlayers(filtered);
+    });
+  }
+
+  // Expose only necessary functions to global scope
+  window.verifyPin = verifyPin;
+})();
 </script>
 </body>
 </html>
