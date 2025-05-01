@@ -98,24 +98,46 @@ async function fetchPlayers() {
       fetchSheetData(contactSheetName)
     ]);
 
-    /* DEBUG: Verify data structure */
-    console.log("First Contact Info Row:", contactRows[0]?.c?.map(c => c?.v));
-    console.log("First Availability Row:", playerRows[0]?.c?.map(c => c?.v));
-
-    // Build contact map with normalized names
+    // Build contact map with strict cleaning
     const contactMap = {};
     contactRows.forEach(row => {
       const rawName = row.c[CONTACT_COLS.NAME]?.v?.toString().trim() || "";
       const normalizedName = rawName.toLowerCase().replace(/\s+/g, ' ');
 
-      if (!normalizedName) return;
-
       contactMap[normalizedName] = {
-        phone: row.c[CONTACT_COLS.PHONE]?.v?.toString().replace('Text or Call: ', '') || "Not provided",
-        email: row.c[CONTACT_COLS.EMAIL]?.v?.toString().replace('Email: ', '') || "Not provided",
-        facebook: row.c[CONTACT_COLS.FACEBOOK]?.v?.toString() || "Not provided"
+        phone: row.c[CONTACT_COLS.PHONE]?.v?.toString()
+          .replace('Text or Call: ', '')
+          .trim() || "Not provided",
+        email: row.c[CONTACT_COLS.EMAIL]?.v?.toString()
+          .replace('Email: ', '')
+          .trim() || "Not provided",
+        facebook: row.c[CONTACT_COLS.FACEBOOK]?.v?.toString()
+          .trim() || "Not provided"
       };
     });
+
+    // Process players with strict matching
+    return playerRows.map(row => {
+      const rawName = row.c[AVAILABILITY_COLS.NAME]?.v?.toString().trim() || "";
+      const normalizedName = rawName.toLowerCase().replace(/\s+/g, ' ');
+
+      return {
+        name: rawName,
+        contact: contactMap[normalizedName] || {
+          phone: "Not found",
+          email: "Not found",
+          facebook: "Not found"
+        },
+        availability: parseAvailability(row.c[AVAILABILITY_COLS.AVAILABILITY]?.v?.toString() || ""),
+        location: row.c[AVAILABILITY_COLS.LOCATION]?.v?.toString().trim() || "No preferred location"
+      };
+    });
+  } catch (error) {
+    console.error("Error:", error);
+    return [];
+  }
+}
+
 
     // Process player data with strict name matching
     return playerRows.map(row => {
