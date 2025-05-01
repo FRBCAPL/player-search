@@ -98,12 +98,16 @@ async function fetchPlayers() {
       fetchSheetData(contactSheetName)
     ]);
 
-    // Build contact map
+    // Enhanced contact mapping
     const contactMap = {};
     contactRows.forEach(row => {
       const rawName = row.c[CONTACT_COLS.NAME]?.v?.toString().trim() || "";
-      const normalizedName = rawName.toLowerCase().replace(/\s+/g, ' ');
-      
+      const normalizedName = rawName.toLowerCase()
+        .replace(/\s+/g, ' ')  // Collapse multiple spaces
+        .replace(/[^\w\s]/g, ''); // Remove special characters
+        
+      if (!normalizedName) return;
+
       contactMap[normalizedName] = {
         phone: row.c[CONTACT_COLS.PHONE]?.v?.toString()
           .replace('Text or Call: ', '')
@@ -115,6 +119,33 @@ async function fetchPlayers() {
           .trim() || "Not provided"
       };
     });
+
+    // Process players with strict filtering
+    return playerRows
+      .map(row => {
+        const rawName = row.c[AVAILABILITY_COLS.NAME]?.v?.toString().trim() || "";
+        const normalizedName = rawName.toLowerCase()
+          .replace(/\s+/g, ' ')
+          .replace(/[^\w\s]/g, '');
+
+        return {
+          name: rawName,
+          contact: contactMap[normalizedName] || {
+            phone: "Not found",
+            email: "Not found",
+            facebook: "Not found"
+          },
+          availability: parseAvailability(row.c[AVAILABILITY_COLS.AVAILABILITY]?.v?.toString() || ""),
+          location: row.c[AVAILABILITY_COLS.LOCATION]?.v?.toString().trim() || "No preferred location"
+        };
+      })
+      .filter(player => player.name); // Remove empty names
+  } catch (error) {
+    console.error("Error:", error);
+    return [];
+  }
+}
+
 
     // Process players
     return playerRows.map(row => {
