@@ -133,20 +133,20 @@ async function fetchPlayers() {
 
 
 
-function renderPlayers(players) {
+function renderPlayers(players, term = "") {
   const container = document.getElementById("results");
   container.innerHTML = players.length ? players.map(p => `
     <div class="player">
-      <h3>${p.name}</h3>
+      <h3>${highlight(p.name, term)}</h3>
       <p>📞 ${p.contact.phone}</p>
       <p>📧 ${p.contact.email}</p>
       <p>🔵 ${p.contact.facebook}</p>
-      <p>📍 ${p.location.replace(/\n/g, "<br>")}</p>
+      <p>📍 ${highlight(p.location.replace(/\n/g, "<br>"), term)}</p>
       <div class="availability-grid">
         ${["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(day => `
           <div class="availability-day">
             <strong>${day}</strong>
-            <div class="available-slot">${p.availability[day]}</div>
+            <div class="available-slot">${highlight(p.availability[day], term)}</div>
           </div>
         `).join('')}
       </div>
@@ -154,18 +154,32 @@ function renderPlayers(players) {
   `).join("") : "<p>No players found</p>";
 }
 
+function highlight(text, term) {
+  if (!term) return text;
+  const regex = new RegExp(term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+  return text.replace(regex, match => `<span style="background:yellow">${match}</span>`);
+}
+
+
 async function initSearch() {
   allPlayers = await fetchPlayers();
-  console.log("All Players:", allPlayers);
   
   document.getElementById("searchInput").addEventListener("input", e => {
-    const term = e.target.value.toLowerCase();
+    const term = e.target.value.toLowerCase().trim();
+    
+    if (term.length < 3) {
+      document.getElementById("results").innerHTML = 
+        '<p style="color:#666">Type at least 3 letters to search</p>';
+      return;
+    }
+
     const filtered = allPlayers.filter(p => 
       p.name.toLowerCase().includes(term) || 
       Object.values(p.availability).some(v => v.toLowerCase().includes(term)) ||
       p.location.toLowerCase().includes(term)
     );
-    renderPlayers(filtered);
+    
+    renderPlayers(filtered, term); // Pass term to highlight
   });
 }
 
