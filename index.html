@@ -138,16 +138,19 @@ async function fetchPlayers() {
 
 
 function parseAvailability(text) {
+  console.log("Raw Availability Input:", text);  // DEBUG
+  
+  // Fix line breaks and clean text
+  text = (text || "").replace(/\n/g, " ").replace(/\s+/g, " ").trim();
+  
   const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const result = {};
   days.forEach(day => result[day] = "❌ Unavailable");
 
-  text.split("Day:").forEach(dayBlock => {
-    if (!dayBlock.trim()) return;
-    
+  text.split("Day:").slice(1).forEach(dayBlock => {  // slice(1) removes first empty
     const dayMatch = dayBlock.match(/Monday|Tuesday|Wednesday|Thursday|Friday|Saturday/i);
-    const fromMatch = dayBlock.match(/From: ([0-9a-z:]+)/i);
-    const toMatch = dayBlock.match(/Until: ([0-9a-z: ]+)/i);
+    const fromMatch = dayBlock.match(/From:\s*([0-9apm:]+)/i);
+    const toMatch = dayBlock.match(/Until:\s*([0-9apm: ]+)/i);
     
     if (dayMatch && fromMatch && toMatch) {
       const shortDay = dayMatch[0].substring(0, 3);
@@ -158,6 +161,7 @@ function parseAvailability(text) {
     }
   });
 
+  console.log("Parsed Availability:", result);  // DEBUG
   return result;
 }
 
