@@ -18,10 +18,10 @@
   /* Modal Styles */
   #playerModal { display:none; position:fixed; left:0; top:0; width:100vw; height:100vh; background:rgba(0,0,0,0.4); z-index:1000; align-items:center; justify-content:center; }
   #modalContent { background:#fff; padding:30px 20px; border-radius:10px; max-width:400px; width:90%; margin:auto; position:relative; text-align: center;}
-  #modalContent button { position:absolute; top:8px; right:12px; background:none; border:none; font-size:1.5em; color: #1976d2; cursor:pointer; width:auto; }
+  #modalContent button.close-btn { position:absolute; top:12px; right:12px; background:none; border:none; font-size:1.5em; color: #1976d2; cursor:pointer; width:auto; z-index: 10;}
   #modalBody h3 { color:#1976d2; margin-top:0; }
-  #contactDetails { display: none; margin-top: 15px; }
-  .contact-link { color: #1976d2; text-decoration: underline; background: none; border: none; cursor: pointer; font-size: 1em; margin-top: 12px; }
+  .contact-link { color: #1976d2; text-decoration: underline; background: none; border: none; cursor: pointer; font-size: 1em; margin: 20px 0 0 0; padding: 0;}
+  .contactDetails { display: none; margin-top: 15px; text-align: left; }
 </style>
 </head>
 <body>
@@ -42,7 +42,7 @@
 <!-- Player Details Modal -->
 <div id="playerModal">
   <div id="modalContent">
-    <button onclick="closeModal()">&times;</button>
+    <button class="close-btn" onclick="closeModal()">&times;</button>
     <div id="modalBody"></div>
   </div>
 </div>
@@ -164,7 +164,7 @@ function showPlayerDetails(idx) {
   const p = allPlayers[idx];
   if (!p) return;
   document.getElementById("modalBody").innerHTML = `
-    <div style="text-align:center;">
+    <div style="text-align:center; position: relative;">
       <h3>${p.name}</h3>
       <p><strong>Preferred Locations:</strong></p>
       <p>${p.location.replace(/\n/g, "<br>")}</p>
@@ -176,8 +176,8 @@ function showPlayerDetails(idx) {
           </div>
         `).join('')}
       </div>
-      <button class="contact-link" onclick="showContactDetails(${idx}); return false;">Contact Details</button>
-      <div id="contactDetails" style="display:none;">
+      <button class="contact-link" id="contactBtn${idx}" style="margin-top:20px;" onclick="showContactDetails(${idx}); return false;">Contact Details</button>
+      <div class="contactDetails" id="contactDetails${idx}">
         <hr>
         <p>📞 ${p.contact.phone}</p>
         <p>📧 ${p.contact.email}</p>
@@ -186,14 +186,18 @@ function showPlayerDetails(idx) {
       </div>
     </div>
   `;
+  // Hide contact details by default
+  document.getElementById(`contactDetails${idx}`).style.display = "none";
   document.getElementById("playerModal").style.display = "flex";
 }
 
-
 function showContactDetails(idx) {
-  document.getElementById("contactDetails").style.display = "block";
-  // Optionally, hide the button after showing contact info:
-  event.target.style.display = "none";
+  const details = document.getElementById(`contactDetails${idx}`);
+  const btn = document.getElementById(`contactBtn${idx}`);
+  if (details && btn) {
+    details.style.display = "block";
+    btn.style.display = "none";
+  }
 }
 
 function closeModal() {
