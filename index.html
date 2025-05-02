@@ -29,7 +29,8 @@
     color: #777777;
   }
 
-  #pinInput, #pinSection button {
+  #pinInput, #pinSection button,
+  #searchInput, #searchSection button {
     max-width: 200px;
     margin: 0 auto 10px auto;
     display: block;
@@ -54,7 +55,7 @@
     margin-top: 20px;
   }
 
-  #pinSection {
+  #pinSection, #searchSection {
     margin-bottom: 30px;
     text-align: center;
   }
@@ -203,6 +204,7 @@
 <div id="searchSection" style="display:none;">
   <h2>Player Search</h2>
   <input type="text" id="searchInput" placeholder="Search players or availability..." />
+  <!-- No button needed for search, but if you add one, it will match the style -->
   <div id="results"><p>Start typing to search players...</p></div>
 </div>
 
