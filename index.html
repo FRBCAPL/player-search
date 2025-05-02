@@ -36,7 +36,7 @@
 <script>
 const sheetID = "1tvMgMHsRwQxsR6lMNlSnztmwpK7fhZeNEyqjTqmRFRc";
 const pinSheetName = "BCAPL SIGNUP";
-const playerSheetName = "BCAPL Singles Availability"; // CRITICAL - MUST MATCH YOUR SHEET
+const playerSheetName = "BCAPL Singles Availability";
 const contactSheetName = "Contact Info";
 
 let allPlayers = [];
@@ -92,7 +92,8 @@ async function fetchPlayers() {
         contactMap[rawName.toLowerCase()] = {
           phone: row.c[1]?.v?.toString().replace('Text or Call: ', '') || "Not provided",
           email: row.c[2]?.v?.toString().replace('Email: ', '') || "Not provided",
-          facebook: row.c[3]?.v?.toString() || "Not provided"
+          facebook: row.c[3]?.v?.toString() || "Not provided",
+          schedulingHub: row.c[4]?.v?.toString() || "" // Column E: Player Scheduling Hub
         };
       }
     });
@@ -107,7 +108,8 @@ async function fetchPlayers() {
         contact: contactMap[rawName.toLowerCase()] || {
           phone: "Not found",
           email: "Not found",
-          facebook: "Not found"
+          facebook: "Not found",
+          schedulingHub: ""
         },
         availability: {
           Mon: row.c[1]?.v?.toString().trim() || "❌ Unavailable",
@@ -128,11 +130,6 @@ async function fetchPlayers() {
   }
 }
 
-
-
-
-
-
 function renderPlayers(players, term = "") {
   const container = document.getElementById("results");
   container.innerHTML = players.length ? players.map(p => `
@@ -141,6 +138,7 @@ function renderPlayers(players, term = "") {
       <p>📞 ${p.contact.phone}</p>
       <p>📧 ${p.contact.email}</p>
       <p>🔵 ${p.contact.facebook}</p>
+      ${p.contact.schedulingHub ? `<p>📅 <a href="https://frusapl.com/scheduling-hub" target="_blank">Player Scheduling Hub</a></p>` : ""}
       <p>📍 ${highlight(p.location.replace(/\n/g, "<br>"), term)}</p>
       <div class="availability-grid">
         ${["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(day => `
@@ -159,7 +157,6 @@ function highlight(text, term) {
   const regex = new RegExp(term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
   return text.replace(regex, match => `<span style="background:yellow">${match}</span>`);
 }
-
 
 async function initSearch() {
   allPlayers = await fetchPlayers();
@@ -193,3 +190,6 @@ function toProperCase(name) {
     .join(' ');
 }
 </script>
+</body>
+</html>
+
