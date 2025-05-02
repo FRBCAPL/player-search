@@ -10,16 +10,18 @@
   button { background: #1976d2; color: white; border: none; cursor: pointer; border-radius: 4px; }
   #results { margin-top: 20px; }
   #pinSection { margin-bottom: 30px; }
-  .player { background: none; border-radius: 8px; padding: 0; margin: 10px 0; box-shadow: none; }
+  .player { background: none; border-radius: 8px; padding: 0; margin: 10px 0; box-shadow: none; text-align: center; }
   .player a { color: #1976d2; text-decoration: underline; font-size: 1.15em; cursor: pointer; }
   .availability-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; margin-top: 10px; }
-  .availability-day { padding: 8px; border-radius: 4px; background: #f0f7ff; border: 1px solid #d0e3ff; }
+  .availability-day { padding: 8px; border-radius: 4px; background: #f0f7ff; border: 1px solid #d0e3ff; text-align: center; }
   .available-slot { margin-top: 5px; padding: 4px; background: #e6f7d9; border-radius: 3px; font-size: 0.9em; }
   /* Modal Styles */
   #playerModal { display:none; position:fixed; left:0; top:0; width:100vw; height:100vh; background:rgba(0,0,0,0.4); z-index:1000; align-items:center; justify-content:center; }
-  #modalContent { background:#fff; padding:30px 20px; border-radius:10px; max-width:400px; width:90%; margin:auto; position:relative; }
+  #modalContent { background:#fff; padding:30px 20px; border-radius:10px; max-width:400px; width:90%; margin:auto; position:relative; text-align: center;}
   #modalContent button { position:absolute; top:8px; right:12px; background:none; border:none; font-size:1.5em; color: #1976d2; cursor:pointer; width:auto; }
   #modalBody h3 { color:#1976d2; margin-top:0; }
+  #contactDetails { display: none; margin-top: 15px; }
+  .contact-link { color: #1976d2; text-decoration: underline; background: none; border: none; cursor: pointer; font-size: 1em; margin-top: 12px; }
 </style>
 </head>
 <body>
@@ -162,25 +164,36 @@ function showPlayerDetails(idx) {
   const p = allPlayers[idx];
   if (!p) return;
   document.getElementById("modalBody").innerHTML = `
-   <center> <h3>${p.name}</h3>
-    <p>📞 ${p.contact.phone}</p>
-    <p>📧 ${p.contact.email}</p>
-    <p>🔵 ${p.contact.facebook}</p>
-    ${p.contact.schedulingHub ? `<p>📅 <a href="https://frusapl.com/scheduling-hub" target="_blank">Player Scheduling Hub</a></p>` : ""}</center>
-    <p><center><strong>Preferred Locations:</strong></center>
-    <center>${p.location.replace(/\n/g, "<br>")}</center></p>
-    <div class="availability-grid" style="margin-top:10px;">
-      ${["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(day => `
-        <div class="availability-day">
-          <strong>${day}</strong>
-          <div class="available-slot">${p.availability[day]}</div>
-        </div>
-      `).join('')}
+    <div style="text-align:center;">
+      <h3>${p.name}</h3>
+      <p><strong>Preferred Locations:</strong></p>
+      <p>${p.location.replace(/\n/g, "<br>")}</p>
+      <div class="availability-grid" style="margin-top:10px;">
+        ${["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(day => `
+          <div class="availability-day">
+            <strong>${day}</strong>
+            <div class="available-slot">${p.availability[day]}</div>
+          </div>
+        `).join('')}
+      </div>
+      <button class="contact-link" onclick="showContactDetails(${idx}); return false;">Contact Details</button>
+      <div id="contactDetails" style="display:none;">
+        <hr>
+        <p>📞 ${p.contact.phone}</p>
+        <p>📧 ${p.contact.email}</p>
+        <p>🔵 ${p.contact.facebook}</p>
+        ${p.contact.schedulingHub ? `<p>📅 <a href="https://frusapl.com/scheduling-hub" target="_blank">Player Scheduling Hub</a></p>` : ""}
+      </div>
     </div>
   `;
   document.getElementById("playerModal").style.display = "flex";
 }
 
+function showContactDetails(idx) {
+  document.getElementById("contactDetails").style.display = "block";
+  // Optionally, hide the button after showing contact info:
+  event.target.style.display = "none";
+}
 
 function closeModal() {
   document.getElementById("playerModal").style.display = "none";
@@ -209,7 +222,6 @@ async function initSearch() {
       Object.values(p.availability).some(v => v.toLowerCase().includes(term)) ||
       p.location.toLowerCase().includes(term)
     );
-    
     renderPlayers(filtered, term); // Pass term to highlight
   });
 }
