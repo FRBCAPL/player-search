@@ -168,7 +168,7 @@ function showPlayerDetails(idx) {
     <p>🔵 ${p.contact.facebook}</p>
     ${p.contact.schedulingHub ? `<p>📅 <a href="https://frusapl.com/scheduling-hub" target="_blank">Player Scheduling Hub</a></p>` : ""}
     <p><center><strong>Preferred Locations:</strong></center>
-    ${p.location.replace(/\n/g, "<br>")}</p>
+    <center>${p.location.replace(/\n/g, "<br>")}</center></p>
     <div class="availability-grid" style="margin-top:10px;">
       ${["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(day => `
         <div class="availability-day">
