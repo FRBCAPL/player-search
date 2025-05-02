@@ -15,13 +15,14 @@
   .availability-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; margin-top: 10px; }
   .availability-day { padding: 8px; border-radius: 4px; background: #f0f7ff; border: 1px solid #d0e3ff; text-align: center; }
   .available-slot { margin-top: 5px; padding: 4px; background: #e6f7d9; border-radius: 3px; font-size: 0.9em; }
-  /* Modal Styles */
   #playerModal { display:none; position:fixed; left:0; top:0; width:100vw; height:100vh; background:rgba(0,0,0,0.4); z-index:1000; align-items:center; justify-content:center; }
   #modalContent { background:#fff; padding:30px 20px; border-radius:10px; max-width:400px; width:90%; margin:auto; position:relative; text-align: center;}
   #modalContent button.close-btn { position:absolute; top:12px; right:12px; background:none; border:none; font-size:1.5em; color: #1976d2; cursor:pointer; width:auto; z-index: 10;}
   #modalBody h3 { color:#1976d2; margin-top:0; }
   .contact-link { color: #1976d2; text-decoration: underline; background: none; border: none; cursor: pointer; font-size: 1em; margin: 20px 0 0 0; padding: 0;}
   .contactDetails { display: none; margin-top: 15px; text-align: left; }
+  .countdown-timer { color: #d32f2f; font-weight: bold; margin-bottom: 10px; }
+  .disclaimer { margin-top: 15px; padding: 10px; background: #fff3cd; border-left: 5px solid #ffa502; color: #856404; font-size: 0.95em; border-radius: 4px;}
 </style>
 </head>
 <body>
@@ -54,6 +55,7 @@ const playerSheetName = "BCAPL Singles Availability";
 const contactSheetName = "Contact Info";
 
 let allPlayers = [];
+let contactTimers = {}; // For managing multiple timers if needed
 
 async function verifyPin() {
   const pin = document.getElementById("pinInput").value.trim();
@@ -161,6 +163,12 @@ function renderPlayers(players, term = "") {
 
 // Show player details in modal
 function showPlayerDetails(idx) {
+  // Clear any previous timer for this player
+  if (contactTimers[idx]) {
+    clearInterval(contactTimers[idx].interval);
+    clearTimeout(contactTimers[idx].timeout);
+    contactTimers[idx] = null;
+  }
   const p = allPlayers[idx];
   if (!p) return;
   document.getElementById("modalBody").innerHTML = `
@@ -178,11 +186,16 @@ function showPlayerDetails(idx) {
       </div>
       <button class="contact-link" id="contactBtn${idx}" style="margin-top:20px;" onclick="showContactDetails(${idx}); return false;">Contact Details</button>
       <div class="contactDetails" id="contactDetails${idx}">
+        <div class="countdown-timer" id="countdown${idx}"></div>
         <hr>
         <p>📞 ${p.contact.phone}</p>
         <p>📧 ${p.contact.email}</p>
         <p>🔵 ${p.contact.facebook}</p>
         ${p.contact.schedulingHub ? `<p>📅 <a href="https://frusapl.com/scheduling-hub" target="_blank">Player Scheduling Hub</a></p>` : ""}
+        <div class="disclaimer">
+          <strong>Notice:</strong> This information is private and intended only for league scheduling. <br>
+          <b>Do not share this information with anyone else.</b>
+        </div>
       </div>
     </div>
   `;
@@ -194,13 +207,44 @@ function showPlayerDetails(idx) {
 function showContactDetails(idx) {
   const details = document.getElementById(`contactDetails${idx}`);
   const btn = document.getElementById(`contactBtn${idx}`);
-  if (details && btn) {
+  const countdown = document.getElementById(`countdown${idx}`);
+  if (details && btn && countdown) {
     details.style.display = "block";
     btn.style.display = "none";
+    let seconds = 30;
+    countdown.textContent = `Contact details will hide in ${seconds} seconds`;
+    // Clear any previous timer for this player
+    if (contactTimers[idx]) {
+      clearInterval(contactTimers[idx].interval);
+      clearTimeout(contactTimers[idx].timeout);
+    }
+    // Start countdown
+    contactTimers[idx] = {
+      interval: setInterval(() => {
+        seconds--;
+        if (seconds > 0) {
+          countdown.textContent = `Contact details will hide in ${seconds} seconds`;
+        }
+      }, 1000),
+      timeout: setTimeout(() => {
+        details.style.display = "none";
+        btn.style.display = "inline-block";
+        clearInterval(contactTimers[idx].interval);
+        contactTimers[idx] = null;
+      }, 30000)
+    };
   }
 }
 
 function closeModal() {
+  // Clear all timers when modal closes
+  Object.values(contactTimers).forEach(timer => {
+    if (timer) {
+      clearInterval(timer.interval);
+      clearTimeout(timer.timeout);
+    }
+  });
+  contactTimers = {};
   document.getElementById("playerModal").style.display = "none";
 }
 
