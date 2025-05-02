@@ -10,12 +10,16 @@
   button { background: #1976d2; color: white; border: none; cursor: pointer; border-radius: 4px; }
   #results { margin-top: 20px; }
   #pinSection { margin-bottom: 30px; }
-  .player { background: #f9f9f9; border-radius: 8px; padding: 15px; margin: 10px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-  .player h3 { margin: 0 0 8px 0; color: #1976d2; }
-  .player p { margin: 5px 0; }
+  .player { background: none; border-radius: 8px; padding: 0; margin: 10px 0; box-shadow: none; }
+  .player a { color: #1976d2; text-decoration: underline; font-size: 1.15em; cursor: pointer; }
   .availability-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; margin-top: 10px; }
   .availability-day { padding: 8px; border-radius: 4px; background: #f0f7ff; border: 1px solid #d0e3ff; }
   .available-slot { margin-top: 5px; padding: 4px; background: #e6f7d9; border-radius: 3px; font-size: 0.9em; }
+  /* Modal Styles */
+  #playerModal { display:none; position:fixed; left:0; top:0; width:100vw; height:100vh; background:rgba(0,0,0,0.4); z-index:1000; align-items:center; justify-content:center; }
+  #modalContent { background:#fff; padding:30px 20px; border-radius:10px; max-width:400px; width:90%; margin:auto; position:relative; }
+  #modalContent button { position:absolute; top:8px; right:12px; background:none; border:none; font-size:1.5em; color: #1976d2; cursor:pointer; width:auto; }
+  #modalBody h3 { color:#1976d2; margin-top:0; }
 </style>
 </head>
 <body>
@@ -31,6 +35,14 @@
   <h2>Player Search</h2>
   <input type="text" id="searchInput" placeholder="Search players or availability..." />
   <div id="results"><p>Start typing to search players...</p></div>
+</div>
+
+<!-- Player Details Modal -->
+<div id="playerModal">
+  <div id="modalContent">
+    <button onclick="closeModal()">&times;</button>
+    <div id="modalBody"></div>
+  </div>
 </div>
 
 <script>
@@ -132,24 +144,44 @@ async function fetchPlayers() {
 
 function renderPlayers(players, term = "") {
   const container = document.getElementById("results");
-  container.innerHTML = players.length ? players.map(p => `
+  if (!players.length) {
+    container.innerHTML = "<p>No players found</p>";
+    return;
+  }
+  container.innerHTML = players.map((p, idx) => `
     <div class="player">
-      <h3>${highlight(p.name, term)}</h3>
-      <p>📞 ${p.contact.phone}</p>
-      <p>📧 ${p.contact.email}</p>
-      <p>🔵 ${p.contact.facebook}</p>
-      ${p.contact.schedulingHub ? `<p>📅 <a href="https://frusapl.com/scheduling-hub" target="_blank">Player Scheduling Hub</a></p>` : ""}
-      <p>📍 ${highlight(p.location.replace(/\n/g, "<br>"), term)}</p>
-      <div class="availability-grid">
-        ${["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(day => `
-          <div class="availability-day">
-            <strong>${day}</strong>
-            <div class="available-slot">${highlight(p.availability[day], term)}</div>
-          </div>
-        `).join('')}
-      </div>
+      <a href="#" onclick="showPlayerDetails(${idx}); return false;">
+        ${highlight(p.name, term)}
+      </a>
     </div>
-  `).join("") : "<p>No players found</p>";
+  `).join("");
+}
+
+// Show player details in modal
+function showPlayerDetails(idx) {
+  const p = allPlayers[idx];
+  if (!p) return;
+  document.getElementById("modalBody").innerHTML = `
+    <h3>${p.name}</h3>
+    <p>📞 ${p.contact.phone}</p>
+    <p>📧 ${p.contact.email}</p>
+    <p>🔵 ${p.contact.facebook}</p>
+    ${p.contact.schedulingHub ? `<p>📅 <a href="https://frusapl.com/scheduling-hub" target="_blank">Player Scheduling Hub</a></p>` : ""}
+    <p>📍 ${p.location.replace(/\n/g, "<br>")}</p>
+    <div class="availability-grid" style="margin-top:10px;">
+      ${["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(day => `
+        <div class="availability-day">
+          <strong>${day}</strong>
+          <div class="available-slot">${p.availability[day]}</div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+  document.getElementById("playerModal").style.display = "flex";
+}
+
+function closeModal() {
+  document.getElementById("playerModal").style.display = "none";
 }
 
 function highlight(text, term) {
@@ -192,4 +224,3 @@ function toProperCase(name) {
 </script>
 </body>
 </html>
-
