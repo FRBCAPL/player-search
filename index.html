@@ -162,11 +162,11 @@ function showPlayerDetails(idx) {
   const p = allPlayers[idx];
   if (!p) return;
   document.getElementById("modalBody").innerHTML = `
-    <h3>${p.name}</h3>
+   <center> <h3>${p.name}</h3>
     <p>📞 ${p.contact.phone}</p>
     <p>📧 ${p.contact.email}</p>
     <p>🔵 ${p.contact.facebook}</p>
-    ${p.contact.schedulingHub ? `<p>📅 <a href="https://frusapl.com/scheduling-hub" target="_blank">Player Scheduling Hub</a></p>` : ""}
+    ${p.contact.schedulingHub ? `<p>📅 <a href="https://frusapl.com/scheduling-hub" target="_blank">Player Scheduling Hub</a></p>` : ""}</center>
     <p><center><strong>Preferred Locations:</strong></center>
     <center>${p.location.replace(/\n/g, "<br>")}</center></p>
     <div class="availability-grid" style="margin-top:10px;">
