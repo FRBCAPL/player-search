@@ -88,6 +88,8 @@
     border-radius: 3px;
     font-size: 0.9em;
     color: #FFCCCC;
+    word-break: break-word;
+    white-space: pre-line;
   }
 
   #playerModal {
@@ -334,7 +336,10 @@ function showPlayerDetails(idx) {
         ${["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(day => `
           <div class="availability-day">
             <strong>${day}</strong>
-            <div class="available-slot">${p.availability[day]}</div>
+            <div class="available-slot">${
+              // Each timeframe on its own line: replace 2+ spaces with <br>
+              p.availability[day].replace(/ {2,}/g, '<br>')
+            }</div>
           </div>
         `).join('')}
       </div>
