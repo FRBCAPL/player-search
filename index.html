@@ -1,203 +1,197 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-  
-<title>Player Search Portal</title>
+  <meta charset="UTF-8" />
+  <title>Player Search Portal</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      max-width: 800px;
+      margin: auto;
+      background-color: #000000;
+      color: #CCCCCC;
+      text-align: center;
+    }
 
-   <style>
-  {
-    font-family: Arial, sans-serif;
-    padding: 20px;
-    max-width: 800px;
-    margin: auto;
-    background-color: #000000;
-    color: #CCCCCC;
-     text-align: center;
-  }
+    input, button {
+      padding: 12px;
+      margin: 10px 0;
+      width: 100%;
+      box-sizing: border-box;
+      font-size: 1em;
+      border-radius: 4px;
+      border: 1px solid #555555;
+      background-color: #121212;
+      color: #CCCCCC;
+    }
 
-  input, button {
-    padding: 12px;
-    margin: 10px 0;
-    width: 100%;
-    box-sizing: border-box;
-    font-size: 1em;
-    border-radius: 4px;
-    border: 1px solid #555555;
-    background-color: #121212;
-    color: #CCCCCC;
-  }
+    input::placeholder {
+      color: #777777;
+    }
 
-  input::placeholder {
-    color: #777777;
-  }
+    #pinInput, #pinSection button,
+    #searchInput, #searchSection button {
+      max-width: 200px;
+      margin: 0 auto 10px auto;
+      display: block;
+      width: 100%;
+      font-size: 1em;
+      padding: 10px;
+    }
 
-  #pinInput, #pinSection button,
-  #searchInput, #searchSection button {
-    max-width: 200px;
-    margin: 0 auto 10px auto;
-    display: block;
-    width: 100%;
-    font-size: 1em;
-    padding: 10px;
-  }
- 
-  button {
-    background: #D32F2F;
-    color: white;
-    border: none;
-    cursor: pointer;
-    transition: background 0.3s ease;
-  }
-    
+    button {
+      background: #D32F2F;
+      color: white;
+      border: none;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
 
-    
-  button:hover {
-    background: #B71C1C;
-  }
+    button:hover {
+      background: #B71C1C;
+    }
 
-  #results {
-    margin-top: 20px;
-  }
+    #results {
+      margin-top: 20px;
+    }
 
-  #pinSection, #searchSection {
-    margin-bottom: 30px;
-    text-align: center;
-  }
+    #pinSection, #searchSection {
+      margin-bottom: 30px;
+      text-align: center;
+    }
 
-  .player {
-    background: none;
-    border-radius: 8px;
-    padding: 0;
-    margin: 10px 0;
-    box-shadow: none;
-    text-align: center;
-  }
+    .player {
+      background: none;
+      border-radius: 8px;
+      padding: 0;
+      margin: 10px 0;
+      box-shadow: none;
+      text-align: center;
+    }
 
-  .player a {
-    color: #D32F2F;
-    text-decoration: underline;
-    font-size: 1.15em;
-    cursor: pointer;
-  }
+    .player a {
+      color: #D32F2F;
+      text-decoration: underline;
+      font-size: 1.15em;
+      cursor: pointer;
+    }
 
-  .availability-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 8px;
-    margin-top: 10px;
-  }
+    .availability-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 8px;
+      margin-top: 10px;
+    }
 
-  .availability-day {
-    padding: 8px;
-    border-radius: 4px;
-    background: #121212;
-    border: 1px solid #333333;
-    text-align: center;
-    color: #CCCCCC;
-  }
+    .availability-day {
+      padding: 8px;
+      border-radius: 4px;
+      background: #121212;
+      border: 1px solid #333333;
+      text-align: center;
+      color: #CCCCCC;
+    }
 
-  .available-slot {
-    margin-top: 5px;
-    padding: 4px;
-    background: #330000;
-    border-radius: 3px;
-    font-size: 0.9em;
-    color: #FFCCCC;
-    word-break: break-word;
-    white-space: pre-line;
-  }
+    .available-slot {
+      margin-top: 5px;
+      padding: 4px;
+      background: #330000;
+      border-radius: 3px;
+      font-size: 0.9em;
+      color: #FFCCCC;
+      word-break: break-word;
+      white-space: pre-line;
+    }
 
-  #playerModal {
-    display: none;
-    position: fixed;
-    left: 0;
-    top: 0;
-    width: 100vw;
-    height: 100vh;
-    background: rgba(0, 0, 0, 0.85);
-    z-index: 1000;
-    align-items: center;
-    justify-content: center;
-  }
+    #playerModal {
+      display: none;
+      position: fixed;
+      left: 0;
+      top: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.85);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
 
-  #modalContent {
-    background: #121212;
-    padding: 30px 20px;
-    border-radius: 10px;
-    max-width: 400px;
-    width: 90%;
-    margin: auto;
-    position: relative;
-    text-align: center;
-    color: #E0E0E0;
-    box-shadow: 0 0 15px #D32F2F;
-  }
+    #modalContent {
+      background: #121212;
+      padding: 30px 20px;
+      border-radius: 10px;
+      max-width: 400px;
+      width: 90%;
+      margin: auto;
+      position: relative;
+      text-align: center;
+      color: #E0E0E0;
+      box-shadow: 0 0 15px #D32F2F;
+    }
 
-  #modalContent button.close-btn {
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    background: none;
-    border: none;
-    font-size: 1.5em;
-    color: #D32F2F;
-    cursor: pointer;
-    width: auto;
-    z-index: 10;
-  }
+    #modalContent button.close-btn {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: none;
+      border: none;
+      font-size: 1.5em;
+      color: #D32F2F;
+      cursor: pointer;
+      width: auto;
+      z-index: 10;
+    }
 
-  #modalBody h3 {
-    color: #FFFFFF;
-    margin-top: 0;
-    margin-bottom: 10px;
-    font-size: 1.7em;
-    letter-spacing: 1px;
-  }
+    #modalBody h3 {
+      color: #FFFFFF;
+      margin-top: 0;
+      margin-bottom: 10px;
+      font-size: 1.7em;
+      letter-spacing: 1px;
+    }
 
-  .locations-label {
-    color: #D32F2F;
-    margin-bottom: 4px;
-    font-weight: bold;
-    font-size: 1em;
-  }
+    .locations-label {
+      color: #D32F2F;
+      margin-bottom: 4px;
+      font-weight: bold;
+      font-size: 1em;
+    }
 
-  .contact-link {
-    color: #D32F2F;
-    text-decoration: underline;
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-size: 1em;
-    margin: 20px 0 0 0;
-    padding: 0;
-  }
+    .contact-link {
+      color: #D32F2F;
+      text-decoration: underline;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 1em;
+      margin: 20px 0 0 0;
+      padding: 0;
+    }
 
-  .contactDetails {
-    display: none;
-    margin-top: 15px;
-    text-align: left;
-    color: #E0E0E0;
-  }
+    .contactDetails {
+      display: none;
+      margin-top: 15px;
+      text-align: left;
+      color: #E0E0E0;
+    }
 
-  .countdown-timer {
-    color: #FF4444;
-    font-weight: bold;
-    margin-bottom: 10px;
-  }
+    .countdown-timer {
+      color: #FF4444;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
 
-  .disclaimer {
-    margin-top: 15px;
-    padding: 10px;
-    background: #000000;
-    color: #D32F2F;
-    font-size: 0.95em;
-    border-radius: 4px;
-    border-left: 5px solid #D32F2F;
-  }
-
-    
-
+    .disclaimer {
+      margin-top: 15px;
+      padding: 10px;
+      background: #000000;
+      color: #D32F2F;
+      font-size: 0.95em;
+      border-radius: 4px;
+      border-left: 5px solid #D32F2F;
+    }
+  </style>
 </head>
 <body>
 
@@ -211,7 +205,6 @@
 <div id="searchSection" style="display:none;">
   <h2>Player Search</h2>
   <input type="text" id="searchInput" placeholder="Search players" />
-  <!-- No button needed for search, but if you add one, it will match the style -->
   <div id="results"><p>Start typing to search players...</p></div>
 </div>
 
@@ -380,79 +373,66 @@ function showPlayerDetails(idx) {
   document.getElementById("playerModal").style.display = "flex";
 }
 
+// Helper: highlight search term in player name
+function highlight(name, term) {
+  if (!term) return name;
+  const regex = new RegExp(`(${term})`, "gi");
+  return name.replace(regex, "<mark>$1</mark>");
+}
+
+// Modal close
+function closeModal() {
+  document.getElementById("playerModal").style.display = "none";
+}
+
+// Show contact details with countdown
 function showContactDetails(idx) {
   const details = document.getElementById(`contactDetails${idx}`);
   const btn = document.getElementById(`contactBtn${idx}`);
   const countdown = document.getElementById(`countdown${idx}`);
-  if (details && btn && countdown) {
-    details.style.display = "block";
-    btn.style.display = "none";
-    let seconds = 30;
-    countdown.textContent = `Contact details will hide in ${seconds} seconds`;
-    if (contactTimers[idx]) {
-      clearInterval(contactTimers[idx].interval);
-      clearTimeout(contactTimers[idx].timeout);
-    }
-    contactTimers[idx] = {
-      interval: setInterval(() => {
-        seconds--;
-        if (seconds > 0) {
-          countdown.textContent = `Contact details will hide in ${seconds} seconds`;
-        }
-      }, 1000),
-      timeout: setTimeout(() => {
+
+  if (!details || !btn || !countdown) return;
+
+  details.style.display = "block";
+  btn.style.display = "none";
+
+  let seconds = 30;
+  countdown.innerText = `Visible for ${seconds} seconds`;
+
+  contactTimers[idx] = {
+    interval: setInterval(() => {
+      seconds--;
+      countdown.innerText = `Visible for ${seconds} seconds`;
+      if (seconds <= 0) {
+        clearInterval(contactTimers[idx].interval);
         details.style.display = "none";
         btn.style.display = "inline-block";
-        clearInterval(contactTimers[idx].interval);
-        contactTimers[idx] = null;
-      }, 30000)
-    };
-  }
+      }
+    }, 1000),
+    timeout: setTimeout(() => {
+      clearInterval(contactTimers[idx].interval);
+      details.style.display = "none";
+      btn.style.display = "inline-block";
+    }, 30000)
+  };
 }
 
-function closeModal() {
-  Object.values(contactTimers).forEach(timer => {
-    if (timer) {
-      clearInterval(timer.interval);
-      clearTimeout(timer.timeout);
-    }
+// Main search initialization
+function initSearch() {
+  fetchPlayers().then(players => {
+    allPlayers = players;
+    renderPlayers(players);
+
+    const searchInput = document.getElementById("searchInput");
+    searchInput.value = "";
+    searchInput.addEventListener("input", function() {
+      const term = this.value.trim();
+      const filtered = allPlayers.filter(p =>
+        p.name.toLowerCase().includes(term.toLowerCase())
+      );
+      renderPlayers(filtered, term);
+    });
   });
-  contactTimers = {};
-  document.getElementById("playerModal").style.display = "none";
-}
-
-function highlight(text, term) {
-  if (!term) return text;
-  const regex = new RegExp(term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
-  return text.replace(regex, match => `<span style="background:yellow">${match}</span>`);
-}
-
-async function initSearch() {
-  allPlayers = await fetchPlayers();
-  document.getElementById("searchInput").addEventListener("input", e => {
-    const term = e.target.value.toLowerCase().trim();
-    if (term.length < 3) {
-      document.getElementById("results").innerHTML =
-        '<p style="color:#666">Type at least 3 letters to search</p>';
-      return;
-    }
-    const filtered = allPlayers.filter(p =>
-      p.name.toLowerCase().includes(term) ||
-      Object.values(p.availability).some(v => v.toLowerCase().includes(term)) ||
-      p.location.toLowerCase().includes(term)
-    );
-    renderPlayers(filtered, term);
-  });
-}
-
-function toProperCase(name) {
-  if (!name) return "";
-  return name
-    .toLowerCase()
-    .split(" ")
-    .filter(Boolean)
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
 }
 </script>
 </body>
