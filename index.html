@@ -9,192 +9,189 @@
       padding: 20px;
       max-width: 800px;
       margin: auto;
-      background-color: #[######];
+      background-color: #000000;
       color: #CCCCCC;
       text-align: center;
     }
 
-  input, button {
-    padding: 12px;
-    margin: 10px 0;
-    width: 100%;
-    box-sizing: border-box;
-    font-size: 1em;
-    border-radius: 4px;
-    border: 1px solid #555555;
-    background-color: #121212;
-    color: #CCCCCC;
-  }
+    input, button {
+      padding: 12px;
+      margin: 10px 0;
+      width: 100%;
+      box-sizing: border-box;
+      font-size: 1em;
+      border-radius: 4px;
+      border: 1px solid #555555;
+      background-color: #121212;
+      color: #CCCCCC;
+    }
 
-  input::placeholder {
-    color: #777777;
-  }
+    input::placeholder {
+      color: #777777;
+    }
 
-  #pinInput, #pinSection button,
-  #searchInput, #searchSection button {
-    max-width: 200px;
-    margin: 0 auto 10px auto;
-    display: block;
-    width: 100%;
-    font-size: 1em;
-    padding: 10px;
-  }
- 
-  button {
-    background: #D32F2F;
-    color: white;
-    border: none;
-    cursor: pointer;
-    transition: background 0.3s ease;
-  }
-    
+    #pinInput, #pinSection button,
+    #searchInput, #searchSection button {
+      max-width: 200px;
+      margin: 0 auto 10px auto;
+      display: block;
+      width: 100%;
+      font-size: 1em;
+      padding: 10px;
+    }
 
-    
-  button:hover {
-    background: #B71C1C;
-  }
+    button {
+      background: #D32F2F;
+      color: white;
+      border: none;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
 
-  #results {
-    margin-top: 20px;
-  }
+    button:hover {
+      background: #B71C1C;
+    }
 
-  #pinSection, #searchSection {
-    margin-bottom: 30px;
-    text-align: center;
-  }
+    #results {
+      margin-top: 20px;
+    }
 
-  .player {
-    background: none;
-    border-radius: 8px;
-    padding: 0;
-    margin: 10px 0;
-    box-shadow: none;
-    text-align: center;
-  }
+    #pinSection, #searchSection {
+      margin-bottom: 30px;
+      text-align: center;
+    }
 
-  .player a {
-    color: #D32F2F;
-    text-decoration: underline;
-    font-size: 1.15em;
-    cursor: pointer;
-  }
+    .player {
+      background: none;
+      border-radius: 8px;
+      padding: 0;
+      margin: 10px 0;
+      box-shadow: none;
+      text-align: center;
+    }
 
-  .availability-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 8px;
-    margin-top: 10px;
-  }
+    .player a {
+      color: #D32F2F;
+      text-decoration: underline;
+      font-size: 1.15em;
+      cursor: pointer;
+    }
 
-  .availability-day {
-    padding: 8px;
-    border-radius: 4px;
-    background: #121212;
-    border: 1px solid #333333;
-    text-align: center;
-    color: #CCCCCC;
-  }
+    .availability-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 8px;
+      margin-top: 10px;
+    }
 
-  .available-slot {
-    margin-top: 5px;
-    padding: 4px;
-    background: #330000;
-    border-radius: 3px;
-    font-size: 0.9em;
-    color: #FFCCCC;
-    word-break: break-word;
-    white-space: pre-line;
-  }
+    .availability-day {
+      padding: 8px;
+      border-radius: 4px;
+      background: #121212;
+      border: 1px solid #333333;
+      text-align: center;
+      color: #CCCCCC;
+    }
 
-  #playerModal {
-    display: none;
-    position: fixed;
-    left: 0;
-    top: 0;
-    width: 100vw;
-    height: 100vh;
-    background: rgba(0, 0, 0, 0.85);
-    z-index: 1000;
-    align-items: center;
-    justify-content: center;
-  }
+    .available-slot {
+      margin-top: 5px;
+      padding: 4px;
+      background: #330000;
+      border-radius: 3px;
+      font-size: 0.9em;
+      color: #FFCCCC;
+      word-break: break-word;
+      white-space: pre-line;
+    }
 
-  #modalContent {
-    background: #121212;
-    padding: 30px 20px;
-    border-radius: 10px;
-    max-width: 400px;
-    width: 90%;
-    margin: auto;
-    position: relative;
-    text-align: center;
-    color: #E0E0E0;
-    box-shadow: 0 0 15px #D32F2F;
-  }
+    #playerModal {
+      display: none;
+      position: fixed;
+      left: 0;
+      top: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.85);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
 
-  #modalContent button.close-btn {
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    background: none;
-    border: none;
-    font-size: 1.5em;
-    color: #D32F2F;
-    cursor: pointer;
-    width: auto;
-    z-index: 10;
-  }
-     #modalBody h3 {
-    color: #FFFFFF;
-    margin-top: 0;
-    margin-bottom: 10px;
-    font-size: 1.7em;
-    letter-spacing: 1px;
-  }
+    #modalContent {
+      background: #121212;
+      padding: 30px 20px;
+      border-radius: 10px;
+      max-width: 400px;
+      width: 90%;
+      margin: auto;
+      position: relative;
+      text-align: center;
+      color: #E0E0E0;
+      box-shadow: 0 0 15px #D32F2F;
+    }
 
-  .locations-label {
-    color: #D32F2F;
-    margin-bottom: 4px;
-    font-weight: bold;
-    font-size: 1em;
-  }
+    #modalContent button.close-btn {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: none;
+      border: none;
+      font-size: 1.5em;
+      color: #D32F2F;
+      cursor: pointer;
+      width: auto;
+      z-index: 10;
+    }
 
-  .contact-link {
-    color: #D32F2F;
-    text-decoration: underline;
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-size: 1em;
-    margin: 20px 0 0 0;
-    padding: 0;
-  }
+    #modalBody h3 {
+      color: #FFFFFF;
+      margin-top: 0;
+      margin-bottom: 10px;
+      font-size: 1.7em;
+      letter-spacing: 1px;
+    }
 
-  .contactDetails {
-    display: none;
-    margin-top: 15px;
-    text-align: left;
-    color: #E0E0E0;
-  }
+    .locations-label {
+      color: #D32F2F;
+      margin-bottom: 4px;
+      font-weight: bold;
+      font-size: 1em;
+    }
 
-  .countdown-timer {
-    color: #FF4444;
-    font-weight: bold;
-    margin-bottom: 10px;
-  }
+    .contact-link {
+      color: #D32F2F;
+      text-decoration: underline;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 1em;
+      margin: 20px 0 0 0;
+      padding: 0;
+    }
 
-  .disclaimer {
-    margin-top: 15px;
-    padding: 10px;
-    background: #000000;
-    color: #D32F2F;
-    font-size: 0.95em;
-    border-radius: 4px;
-    border-left: 5px solid #D32F2F;
-  }
+    .contactDetails {
+      display: none;
+      margin-top: 15px;
+      text-align: left;
+      color: #E0E0E0;
+    }
 
-    
+    .countdown-timer {
+      color: #FF4444;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
 
+    .disclaimer {
+      margin-top: 15px;
+      padding: 10px;
+      background: #000000;
+      color: #D32F2F;
+      font-size: 0.95em;
+      border-radius: 4px;
+      border-left: 5px solid #D32F2F;
+    }
+  </style>
 </head>
 <body>
 
@@ -208,7 +205,6 @@
 <div id="searchSection" style="display:none;">
   <h2>Player Search</h2>
   <input type="text" id="searchInput" placeholder="Search players" />
-  <!-- No button needed for search, but if you add one, it will match the style -->
   <div id="results"><p>Start typing to search players...</p></div>
 </div>
 
@@ -285,6 +281,7 @@ async function fetchPlayers() {
         };
       }
     });
+
     // Process players with CORRECT COLUMN MAPPING
     const processedPlayers = playerRows.map(row => {
       const rawName = (row.c[0]?.v?.toString() || "").trim();
@@ -375,93 +372,68 @@ function showPlayerDetails(idx) {
   document.getElementById(`contactDetails${idx}`).style.display = "none";
   document.getElementById("playerModal").style.display = "flex";
 }
-               // Process players with CORRECT COLUMN MAPPING
-    const processedPlayers = playerRows.map(row => {
-      const rawName = (row.c[0]?.v?.toString() || "").trim();
-      if (!rawName) return null;
 
-      return {
-        name: rawName,
-        contact: contactMap[rawName.toLowerCase()] || {
-          phone: "Not found",
-          email: "Not found",
-          facebook: "Not found",
-          schedulingHub: ""
-        },
-        availability: {
-          Mon: row.c[1]?.v?.toString().trim() || "❌ Unavailable",
-          Tue: row.c[2]?.v?.toString().trim() || "❌ Unavailable",
-          Wed: row.c[3]?.v?.toString().trim() || "❌ Unavailable",
-          Thu: row.c[4]?.v?.toString().trim() || "❌ Unavailable",
-          Fri: row.c[5]?.v?.toString().trim() || "❌ Unavailable",
-          Sat: row.c[6]?.v?.toString().trim() || "❌ Unavailable"
-        },
-        location: (row.c[7]?.v?.toString() || "").trim()
-      };
-    }).filter(Boolean);
-
-    return processedPlayers;
-  } catch (error) {
-    console.error("Error:", error);
-    return [];
-  }
+// Helper: highlight search term in player name
+function highlight(name, term) {
+  if (!term) return name;
+  const regex = new RegExp(`(${term})`, "gi");
+  return name.replace(regex, "<mark>$1</mark>");
 }
 
-function renderPlayers(players, term = "") {
-  const container = document.getElementById("results");
-  if (!players.length) {
-    container.innerHTML = "<p>No players found</p>";
-    return;
-  }
-  container.innerHTML = players.map((p, idx) => `
-    <div class="player">
-      <a href="#" onclick="showPlayerDetails(${idx}); return false;">
-        ${highlight(p.name, term)}
-      </a>
-    </div>
-  `).join("");
+// Modal close
+function closeModal() {
+  document.getElementById("playerModal").style.display = "none";
 }
 
-// Show player details in modal
-function showPlayerDetails(idx) {
-  // Clear any previous timer for this player
-  if (contactTimers[idx]) {
-    clearInterval(contactTimers[idx].interval);
-    clearTimeout(contactTimers[idx].timeout);
-    contactTimers[idx] = null;
-  }
-  const p = allPlayers[idx];
-  if (!p) return;
-  document.getElementById("modalBody").innerHTML = `
-    <div style="text-align:center; position: relative;">
-      <h3>${p.name}</h3>
-      <p class="locations-label">Preferred Locations:</p>
-      <p style="margin-top: 0;">${p.location.replace(/\n/g, "<br>")}</p>
-      <div class="availability-grid" style="margin-top:10px;">
-        ${["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(day => `
-          <div class="availability-day">
-            <strong>${day}</strong>
-            <div class="available-slot">${
-              p.availability[day].replace(/ {2,}/g, '<br>')
-            }</div>
-          </div>
-        `).join('')}
-      </div>
-      <button class="contact-link" id="contactBtn${idx}" style="margin-top:20px;" onclick="showContactDetails(${idx}); return false;">Contact Details</button>
-      <div class="contactDetails" id="contactDetails${idx}">
-        <div class="countdown-timer" id="countdown${idx}"></div>
-        <hr>
-        <p>📞 ${p.contact.phone}</p>
-        <p>📧 ${p.contact.email}</p>
-        <p>🔵 ${p.contact.facebook}</p>
-        ${p.contact.schedulingHub ? `<p>📅 <a href="https://frusapl.com/scheduling-hub" target="_blank">Player Scheduling Hub</a></p>` : ""}
-        <div class="disclaimer">
-          <strong>Notice: This information is private and intended only for league scheduling. <br>
-          <b>Do not share this information with anyone else.</strong></b>
-        </div>
-      </div>
-    </div>
-  `;
-  document.getElementById(`contactDetails${idx}`).style.display = "none";
-  document.getElementById("playerModal").style.display = "flex";
+// Show contact details with countdown
+function showContactDetails(idx) {
+  const details = document.getElementById(`contactDetails${idx}`);
+  const btn = document.getElementById(`contactBtn${idx}`);
+  const countdown = document.getElementById(`countdown${idx}`);
+
+  if (!details || !btn || !countdown) return;
+
+  details.style.display = "block";
+  btn.style.display = "none";
+
+  let seconds = 30;
+  countdown.innerText = `Visible for ${seconds} seconds`;
+
+  contactTimers[idx] = {
+    interval: setInterval(() => {
+      seconds--;
+      countdown.innerText = `Visible for ${seconds} seconds`;
+      if (seconds <= 0) {
+        clearInterval(contactTimers[idx].interval);
+        details.style.display = "none";
+        btn.style.display = "inline-block";
+      }
+    }, 1000),
+    timeout: setTimeout(() => {
+      clearInterval(contactTimers[idx].interval);
+      details.style.display = "none";
+      btn.style.display = "inline-block";
+    }, 30000)
+  };
 }
+
+// Main search initialization
+function initSearch() {
+  fetchPlayers().then(players => {
+    allPlayers = players;
+    renderPlayers(players);
+
+    const searchInput = document.getElementById("searchInput");
+    searchInput.value = "";
+    searchInput.addEventListener("input", function() {
+      const term = this.value.trim();
+      const filtered = allPlayers.filter(p =>
+        p.name.toLowerCase().includes(term.toLowerCase())
+      );
+      renderPlayers(filtered, term);
+    });
+  });
+}
+</script>
+</body>
+</html>
