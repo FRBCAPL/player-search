@@ -421,12 +421,18 @@ function showContactDetails(idx) {
 function initSearch() {
   fetchPlayers().then(players => {
     allPlayers = players;
-    renderPlayers(players);
+    // Show initial message only
+    const container = document.getElementById("results");
+    container.innerHTML = "<p>Start typing to search players...</p>";
 
     const searchInput = document.getElementById("searchInput");
     searchInput.value = "";
     searchInput.addEventListener("input", function() {
       const term = this.value.trim();
+      if (term === "") {
+        container.innerHTML = "<p>Start typing to search players...</p>";
+        return;
+      }
       const filtered = allPlayers.filter(p =>
         p.name.toLowerCase().includes(term.toLowerCase())
       );
@@ -434,6 +440,7 @@ function initSearch() {
     });
   });
 }
+
 </script>
 </body>
 </html>
